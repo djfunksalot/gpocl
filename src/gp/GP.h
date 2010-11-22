@@ -48,6 +48,13 @@
 
 
 /*
+   When MAPPING is defined the output values (predictions) from the kernel
+   executions are read via mapping, which is supposed faster than explicit
+   copies.
+*/
+#define MAPPING 1
+
+/*
 FIXME:
 
 On the GPU:
@@ -74,7 +81,9 @@ public:
    { 
       std::cerr << "\nCleaning GP base...\n"; 
       if( m_X ) delete[] m_X;
+#ifndef MAPPING
       if( m_predicted_Y ) delete[] m_predicted_Y;
+#endif
    }
 
 
@@ -209,6 +218,10 @@ public:
       // FIXME: m_num_global_wi % m_num_local_wi
       // One individual por each group
       m_num_global_wi = m_num_local_wi * m_params->m_population_size;
+
+      // FIXME: Remove these restrictions! (need to change the kernel)
+      assert( m_params->m_maximum_genome_size <= m_num_local_wi );
+      assert( m_num_points % m_num_local_wi == 0 );
    }
 
    GPonGPU( Params& p ): GP( p, CL_DEVICE_TYPE_GPU )
@@ -226,7 +239,6 @@ public:
             LoadKernel( "kernels/gpu_fp.cl" );
             break;
          case Params::DEVICE_GPU_PPCU:
-            assert( m_params->m_maximum_genome_size <= m_num_local_wi );
             LoadKernel( "kernels/gpu_ppcu.cl" );
             break;
          case Params::DEVICE_GPU_PPCE:

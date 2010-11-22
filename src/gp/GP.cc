@@ -65,8 +65,6 @@
 #include <algorithm>
 #include <cassert>
 
-#define MAPPING 1
-
 Params* GP::m_params = 0;
 
 // -----------------------------------------------------------------------------
