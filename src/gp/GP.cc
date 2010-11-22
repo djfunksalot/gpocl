@@ -91,33 +91,35 @@ GP::GP( Params& p, cl_device_type device_type ): m_device_type( device_type ),
          m_params->m_population_size : 
          m_params->m_selection_pressure;
    }
-
-
 }
 
 // -----------------------------------------------------------------------------
 void GP::Evolve()
 {
    /*
-   1: Criar aleatoriamente a populacao inicial P
-   2: Avaliar todos indivıduos de P
-   3: for geracao ← 1 to NG do
-      4: Copiar a elite de individuos de P para a populacao temporaria Ptmp
+
+      Pseudo-code for Evolve:
+
+   1: Create (randomly) the initial population P
+   2: Evaluate all individuals (programs) of P
+   3: for generation ← 1 to NG do
+      4: Copy the best (elitism) individuals of P to the temporary population Ptmp
       5: while |Ptmp| < |P| do
-         6: Selecionar e copiar de P dois individuos bem adaptados, p1 e p2
-         7: if [probabilisticamente] cruzamento then
-            8: Cruzar p1 com p2 , gerando os descendentes p1' e p2'
+         6: Select and copy from P two fit individuals, p1 e p2
+         7: if [probabilistically] crossover then
+            8: Recombine p1 and p2, creating the children p1' and p2'
             9: p1 ← p1' ; p2 ← p2'
          10: end if
-         11: if [probabilisticamente] mutacao then
-            12: Aplicar operadores quaisquer de mutacao em p1 e p2, gerando p1' e p2'
+         11: if [probabilistically] mutation then
+            12: Apply mutation operators in p1 and p2, generating p1' and p2'
             13: p1 ← p1' ; p2 ← p2'
          14: end if
-         15: Avaliar p1 e p2 e inseri-los em Ptmp
+         15: Insert p1 and p2 into Ptmp
       16: end while
-      17: P ← Ptmp ; descartar Ptmp
-   18: end for
-   19: return melhor individuo encontrado
+      17: Evaluate all individuals (programs) of Ptmp
+      18: P ← Ptmp; then discard Ptmp
+   19: end for
+   20: return the best individual so far
    */
 
    // TODO: See if we can improve this on the CPU version (mapping memory?)
@@ -130,23 +132,28 @@ void GP::Evolve()
    cl_uint* cur_pop = pop_a;
    cl_uint* tmp_pop = pop_b;
 
+   // 1:
    std::cout << "Evolving initial generation... ";
    InitializePopulation( cur_pop );
+   // 2:
    EvaluatePopulation( cur_pop, fitness );
    std::cout << "done.\n";
 
+   // 3:
    for( unsigned gen = 1; gen < m_params->m_number_of_generations; ++gen )
    {
       std::cout << "Evolving generation " << gen << "... ";
-
+      // 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16:
       Breed( cur_pop, tmp_pop );
-
+      // 17:
       EvaluatePopulation( tmp_pop, fitness );
       std::cout << "done.\n";
 
+      // 18:
       std::swap( cur_pop, tmp_pop );
-   }
+   } // 19
 
+   // Clean up
    delete[] pop_a;
    delete[] pop_b;
    delete[] fitness;
@@ -221,7 +228,6 @@ void GP::EvaluatePopulation( cl_uint* pop, cl_float* fitness )
       // TODO: Pick the best and fill the elitism vector (if any)
    }
 }
-
 
 // -----------------------------------------------------------------------------
 void GP::OpenCLInit()
@@ -303,6 +309,7 @@ void GP::BuildKernel()
    std::string program_src = 
       "#define MAX_GENOME_SIZE " + util::ToString( m_params->m_maximum_genome_size ) + "\n" +
       "#define NUM_POINTS " + util::ToString( m_num_points ) + "\n"
+      "#define X_DIM " + util::ToString( m_x_dim ) + "\n"
       "#define TOP       ( stack[stack_top] )\n"
       "#define POP       ( stack[stack_top--] )\n"
       "#define PUSH( i ) ( stack[++stack_top] = (i) )\n"
@@ -365,9 +372,7 @@ GPonCPU::GPonCPU( Params& p ): GP( p, CL_DEVICE_TYPE_CPU )
    }
 
    LoadKernel( "kernels/common.cl" );
-   // FIXME:
-   LoadKernel( "kernels/gpu_ppcu.cl" );
-   //LoadKernel( "kernels/cpu.cl" );
+   LoadKernel( "kernels/cpu.cl" );
 }
 
 // -----------------------------------------------------------------------------

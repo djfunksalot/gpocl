@@ -180,6 +180,7 @@ public:
       // On the CPU there is only on work-item per work-group
       m_num_local_wi = 1;
 
+      // One individual being evaluated per compute unit ("core")
       m_num_global_wi = m_params->m_population_size;
    }
 
