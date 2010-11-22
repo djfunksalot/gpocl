@@ -58,22 +58,22 @@ void Primitives::Load( unsigned x_dim, unsigned max_gen_size, const std::string&
    Register( 1, "identity",     "_",            "ARG(0)" );
    assert( GPF_IDENTITY == DB.size() - 1 );
 
-   Register( 3, "ifthenelse",   "ITE",          "POP ? POP : (POP, POP)" );
+   Register( 3, "ifthenelse",   "ITE",          "ARG(0) ? ARG(1) : ARG(2)" );
 
    Register( 2, "add",          "+",            "ARG(0) + ARG(1)" );
-   Register( 2, "minus",        "-",            "POP - POP" );
-   Register( 2, "mul",          "*",            "POP * POP" );
-   Register( 2, "div",          "/",            "POP / (TOP == 0.0f ? (POP, 1.0f) : POP)" );
-   Register( 2, "less",         "<",            "POP < POP" );
-   Register( 2, "greater",      ">",            "POP > POP" );
-   Register( 2, "lessequal",    "<=",           "POP <= POP" );
-   Register( 2, "greaterequal", ">=",           "POP >= POP" );
-   Register( 2, "and",          "&&",           "POP && POP" );
-   Register( 2, "or",           "||",           "POP || POP" );
+   Register( 2, "minus",        "-",            "ARG(0) - ARG(1)" );
+   Register( 2, "mul",          "*",            "ARG(0) * ARG(1)" );
+   Register( 2, "div",          "/",            "(ARG(1) == 0.0f ? 1.0f : ARG(0)/ARG(1))" );
+   Register( 2, "less",         "<",            "ARG(0) < ARG(1)" );
+   Register( 2, "greater",      ">",            "ARG(0) > ARG(1)" );
+   Register( 2, "lessequal",    "<=",           "ARG(0) <= ARG(1)" );
+   Register( 2, "greaterequal", ">=",           "ARG(0) >= ARG(1)" );
+   Register( 2, "and",          "&&",           "ARG(0) && ARG(1)" );
+   Register( 2, "or",           "||",           "ARG(0) || ARG(1)" );
 
-   Register( 1, "not",          "!",            "!POP" );
-   Register( 1, "neg",          "neg",          "-POP" );
-   Register( 1, "sqrt",         "sqrt",         "(TOP < 0.0f ? (POP, 1.0f) : sqrt(POP))" );
+   Register( 1, "not",          "!",            "!ARG(0)" );
+   Register( 1, "neg",          "neg",          "-ARG(0)" );
+   Register( 1, "sqrt",         "sqrt",         "(ARG(0) < 0.0f ? 1.0f : sqrt(ARG(0)))" );
 
    Register( 0, "c_pi",         "3.1415",       "M_PI_F" );
    Register( 0, "c_pi_2",       "1.5707",       "M_PI_2_F" );
@@ -181,6 +181,11 @@ void Primitives::Load( unsigned x_dim, unsigned max_gen_size, const std::string&
 // -----------------------------------------------------------------------------
 cl_uint Primitives::RandomGene( unsigned min, unsigned max )
 {
+   // TODO: if min == max == 1 and the user didn't give a function requiring
+   // one argument, then return GPF_IDENTITY. (what about removing GPF_IDENTITY
+   // from DB? We need, however, to ensure that the interpreter will handle it
+   // Plus print it correctly (see PrintGenome)
+
    // Truncate to m_max_arity if necessary
    max = std::min( m_max_arity, max );
 

@@ -170,7 +170,7 @@ void GP::Breed( cl_uint* old_pop, cl_uint* new_pop )
              &new_pop[i * (m_params->m_maximum_genome_size + 1)] );
 
       // TODO: remove:
-      PrintGenome( &new_pop[i * (m_params->m_maximum_genome_size + 1)] );
+      //PrintGenome( &new_pop[i * (m_params->m_maximum_genome_size + 1)] );
    }
 
    // Genetic operations
@@ -223,16 +223,18 @@ void GP::EvaluatePopulation( cl_uint* pop, cl_float* fitness )
       fitness[i] = 0.0f;
       // TODO: check for nan/infinity
       // sum of the squared error
-      std::cout << "\n[";
+  //    std::cout << "\n[";
       for( unsigned j = 0; j < m_num_points; ++j )
       {
-         std::cout << m_predicted_Y[i * m_num_points + j] << " ";
-         fitness[i] += std::pow( m_predicted_Y[i * m_num_points + j] - m_Y[j], 2 );
-         //fitness[i] += std::abs( m_predicted_Y[i * m_num_points + j] - m_Y[j] );
+   //      std::cout << m_predicted_Y[i * m_num_points + j] << " ";
+        // fitness[i] += std::pow( m_predicted_Y[i * m_num_points + j] - m_Y[j], 2 );
+         fitness[i] += std::abs( m_predicted_Y[i * m_num_points + j] - m_Y[j] );
       }
-      std::cout << "]";
+    //  std::cout << "]";
 
-      std::cout << "Fitness program " << i << ": " << fitness[i] << std::endl;
+      std::cout << "(" << i << ")[";
+      PrintGenome( &pop[i * (m_params->m_maximum_genome_size + 1)] );
+      std::cout << "] (Err: " << fitness[i] << ")\n";
       // TODO: Pick the best and fill the elitism vector (if any)
    }
 }
@@ -458,7 +460,7 @@ void GP::InitializePopulation( cl_uint* pop )
       CreateLinearTree( pop + idx, size );
 
       // TODO: remove:
-      PrintGenome( pop + idx - 1 );
+     // PrintGenome( pop + idx - 1 );
 
    }
 }
@@ -491,7 +493,7 @@ void GP::PrintGenome( const cl_uint* genome ) const
    }
 
    //std::cerr << "\nSize: " << size << " Sum: " << sum << std::endl;
-   std::cout << " (CRC: " << sum << ")" << std::endl; 
+   //std::cout << " (CRC: " << sum << ")"; 
    if( sum != 1 ) throw Error( "CRC != 1" );
 }
 
