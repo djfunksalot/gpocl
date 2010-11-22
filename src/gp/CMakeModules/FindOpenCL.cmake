@@ -1,20 +1,20 @@
-# - Try to find OpenCL
-# This module tries to find an OpenCL implementation on your system. It supports
-# AMD / ATI, Apple and NVIDIA implementations, but shoudl work, too.
+# - Try to find OpenCL library and headers
+
+# This module tries to find an OpenCL implementation on the system.
 #
 # Once done this will define
-#  OPENCL_FOUND        - system has OpenCL
+#  OPENCL_FOUND         - system has OpenCL
 #  OPENCL_INCLUDE_DIRS  - the OpenCL include directory
-#  OPENCL_LIBRARIES    - link these to use OpenCL
+#  OPENCL_LIBRARIES     - link these to use OpenCL
 #
 # WIN32 should work, but is untested
 
 FIND_PACKAGE( PackageHandleStandardArgs )
 
-SET (OPENCL_VERSION_STRING "0.1.0")
+SET (OPENCL_VERSION_STRING "0.1.1")
 SET (OPENCL_VERSION_MAJOR 0)
 SET (OPENCL_VERSION_MINOR 1)
-SET (OPENCL_VERSION_PATCH 0)
+SET (OPENCL_VERSION_PATCH 1)
 
 IF (APPLE)
 
@@ -24,10 +24,10 @@ IF (APPLE)
 
 ELSE (APPLE)
 
+   FIND_PATH(OPENCL_INCLUDE_DIRS CL/cl.h DOC "Include for OpenCL")
+   FIND_PATH(_OPENCL_CPP_INCLUDE_DIRS CL/cl.hpp DOC "Include for OpenCL C++ bindings")
+
 	IF (WIN32)
-	
-	    FIND_PATH(OPENCL_INCLUDE_DIRS CL/cl.h)
-	    FIND_PATH(_OPENCL_CPP_INCLUDE_DIRS CL/cl.hpp)
 	
 	    # The AMD SDK currently installs both x86 and x86_64 libraries
 	    # This is only a hack to find out architecture
@@ -47,9 +47,7 @@ ELSE (APPLE)
 	ELSE (WIN32)
 
             # Unix style platforms
-            FIND_LIBRARY(OPENCL_LIBRARIES OpenCL
-              ENV LD_LIBRARY_PATH
-            )
+            FIND_LIBRARY(OPENCL_LIBRARIES OpenCL ENV LD_LIBRARY_PATH DOC "OpenCL lib")
 
             #MESSAGE( "OPENCL_LIBRARIES ${OPENCL_LIBRARIES}" )
 
@@ -59,11 +57,12 @@ ELSE (APPLE)
             #MESSAGE( "OPENCL_LIB_DIR ${OPENCL_LIB_DIR}" )
             #MESSAGE( "_OPENCL_INC_CAND ${_OPENCL_INC_CAND}" )
 
-            # The AMD SDK currently does not place its headers
-            # in /usr/include, therefore also search relative
-            # to the library
-            FIND_PATH(OPENCL_INCLUDE_DIRS CL/cl.h PATHS ${_OPENCL_INC_CAND})
-            FIND_PATH(_OPENCL_CPP_INCLUDE_DIRS CL/cl.hpp PATHS ${_OPENCL_INC_CAND})
+            # The AMD SDK currently does not place its headers in /usr/include,
+            # therefore also search relative to the library.
+            # If the OpenCL headers could not be found, then use the one in
+            # the current directory (.)
+            FIND_PATH(OPENCL_INCLUDE_DIRS CL/cl.h PATHS ${_OPENCL_INC_CAND} . )
+            FIND_PATH(_OPENCL_CPP_INCLUDE_DIRS CL/cl.hpp PATHS ${_OPENCL_INC_CAND} . )
 
 	ENDIF (WIN32)
 
@@ -78,7 +77,4 @@ IF( _OPENCL_CPP_INCLUDE_DIRS )
 	LIST( REMOVE_DUPLICATES OPENCL_INCLUDE_DIRS )
 ENDIF( _OPENCL_CPP_INCLUDE_DIRS )
 
-MARK_AS_ADVANCED(
-  OPENCL_INCLUDE_DIRS
-)
-
+MARK_AS_ADVANCED(OPENCL_INCLUDE_DIRS)

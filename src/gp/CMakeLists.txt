@@ -17,27 +17,20 @@ MARK_AS_ADVANCED( CLEAR OPENCL_LIBRARIES )
 IF( OPENCL_INCLUDE_DIRS )
   INCLUDE_DIRECTORIES( ${OPENCL_INCLUDE_DIRS} )
 ELSE( OPENCL_INCLUDE_DIRS )
-  MESSAGE( SEND_ERROR "Could NOT find OPENCL includes." )
+  MESSAGE( SEND_ERROR ">  Could NOT find OPENCL includes." )
 ENDIF( OPENCL_INCLUDE_DIRS )
 
 IF( OPENCL_LIBRARIES )
   LINK_LIBRARIES( ${OPENCL_LIBRARIES} )
 ELSE( OPENCL_LIBRARIES )
-  MESSAGE( SEND_ERROR "Could NOT find OPENCL library." )
+  MESSAGE( SEND_ERROR ">  Could NOT find OPENCL library." )
 ENDIF( OPENCL_LIBRARIES )
 
 IF( OPENCL_HAS_CPP_BINDINGS )
-	MESSAGE( "OpenCL has C++ bindings. Full include is: " ${OPENCL_INCLUDE_DIRS} )
+	MESSAGE( ">  OpenCL has C++ bindings. Full include is: " ${OPENCL_INCLUDE_DIRS} )
 ELSE( OPENCL_HAS_CPP_BINDINGS )
-	MESSAGE( "No OpenCL C++ bindings found" )
+	MESSAGE( ">  No OpenCL C++ bindings found" )
 ENDIF( OPENCL_HAS_CPP_BINDINGS )
-
-# Recurse into the "GP" subdirectory.
-#ADD_SUBDIRECTORY( gp )
-# Make sure the compiler can find include files from the GP library.
-#INCLUDE_DIRECTORIES( gp )
-# Make sure the linker can find the GP library once it is built.
-#LINK_DIRECTORIES( gp )
 
 ADD_EXECUTABLE( gpocl gpocl.cc Params.cc GP.cc Primitives.cc )
 
@@ -48,5 +41,3 @@ TARGET_LINK_LIBRARIES( gpocl Util ${OPENCL_LIBRARIES} )
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/kernels/common.cl ${CMAKE_BINARY_DIR}/kernels/common.cl COPYONLY)
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/kernels/cpu.cl ${CMAKE_BINARY_DIR}/kernels/cpu.cl COPYONLY)
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/kernels/gpu_ppcu.cl ${CMAKE_BINARY_DIR}/kernels/gpu_ppcu.cl COPYONLY)
-
-#ADD_LIBRARY( GP GP.cc Primitives.cc )

@@ -232,9 +232,12 @@ void GP::EvaluatePopulation( cl_uint* pop, cl_float* fitness )
       }
     //  std::cout << "]";
 
+      /*
       std::cout << "(" << i << ")[";
       PrintGenome( &pop[i * (m_params->m_maximum_genome_size + 1)] );
       std::cout << "] (Err: " << fitness[i] << ")\n";
+      */
+
       // TODO: Pick the best and fill the elitism vector (if any)
    }
 }
