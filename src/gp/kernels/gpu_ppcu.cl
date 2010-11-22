@@ -34,12 +34,11 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
          {
             INTERPRETER_CORE
             default:
-               PUSH( X[iter * wg_size + NUM_POINTS * AS_INT( genome[op] ) + i_id] );
+               PUSH( 0, X[iter * wg_size + NUM_POINTS * AS_INT( genome[op] ) + i_id] );
          }
 
       // -------------------------------
 
-      //Y[iter * wg_size + i_id] = POP
       pred_Y[NUM_POINTS * g_id + iter * wg_size + i_id] = POP;
    }
 
