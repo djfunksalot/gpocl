@@ -55,12 +55,12 @@ void Primitives::Load( unsigned x_dim, unsigned max_gen_size, const std::string&
    /* The first two primitives are special, they need to be the first ones. */
    Register( 0, "ephemeral",    "",             "AS_FLOAT( GENE )" );
    assert( GPT_EPHEMERAL == DB.size() - 1 );
-   Register( 1, "identity",     "_",            "POP" );
+   Register( 1, "identity",     "_",            "ARG(0)" );
    assert( GPF_IDENTITY == DB.size() - 1 );
 
    Register( 3, "ifthenelse",   "ITE",          "POP ? POP : (POP, POP)" );
 
-   Register( 2, "add",          "+",            "POP + POP" );
+   Register( 2, "add",          "+",            "ARG(0) + ARG(1)" );
    Register( 2, "minus",        "-",            "POP - POP" );
    Register( 2, "mul",          "*",            "POP * POP" );
    Register( 2, "div",          "/",            "POP / (TOP == 0.0f ? (POP, 1.0f) : POP)" );

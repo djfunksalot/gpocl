@@ -203,9 +203,12 @@ void GP::EvaluatePopulation( cl_uint* pop, cl_float* fitness )
          sizeof( cl_uint ) * ( m_params->m_population_size * ( m_params->m_maximum_genome_size + 1 ) ),
          pop, NULL, NULL);
 
+   // ---------- begin kernel execution
    m_queue.enqueueNDRangeKernel( m_kernel, cl::NDRange(), cl::NDRange( m_num_global_wi ), 
                                  cl::NDRange( m_num_local_wi ) );
+   // ---------- end kernel execution
 
+   // Wait until the kernel has finished
    m_queue.finish();
 
    // TODO: How about enqueueMapBuffer? (it can be faster)
@@ -220,9 +223,14 @@ void GP::EvaluatePopulation( cl_uint* pop, cl_float* fitness )
       fitness[i] = 0.0f;
       // TODO: check for nan/infinity
       // sum of the squared error
+      std::cout << "\n[";
       for( unsigned j = 0; j < m_num_points; ++j )
-         //fitness[i] += std::pow( m_predicted_Y[i * m_num_points + j] - m_Y[j], 2 );
-         fitness[i] += std::abs( m_predicted_Y[i * m_num_points + j] - m_Y[j] );
+      {
+         std::cout << m_predicted_Y[i * m_num_points + j] << " ";
+         fitness[i] += std::pow( m_predicted_Y[i * m_num_points + j] - m_Y[j], 2 );
+         //fitness[i] += std::abs( m_predicted_Y[i * m_num_points + j] - m_Y[j] );
+      }
+      std::cout << "]";
 
       std::cout << "Fitness program " << i << ": " << fitness[i] << std::endl;
       // TODO: Pick the best and fill the elitism vector (if any)
@@ -301,7 +309,9 @@ void GP::BuildKernel()
          /* TODO: Check for duplicates! The user may have given duplicated
           * primitives (it is allowed to do that). */
          interpreter += " case " + util::ToString( INDEX( m_primitives.m_primitives[i] ) ) + ":"
-            + "PUSH(" + m_primitives.DB[INDEX( m_primitives.m_primitives[i] )].code + ");break;";
+            + "PUSH(" + util::ToString( m_primitives.DB[INDEX( m_primitives.m_primitives[i] )].arity ) 
+                      + "," + m_primitives.DB[INDEX( m_primitives.m_primitives[i] )].code + ") break;";
+            //+ "PUSH(" + m_primitives.DB[INDEX( m_primitives.m_primitives[i] )].code + ");break;";
       }
    interpreter += "\n";
 
@@ -312,7 +322,9 @@ void GP::BuildKernel()
       "#define X_DIM " + util::ToString( m_x_dim ) + "\n"
       "#define TOP       ( stack[stack_top] )\n"
       "#define POP       ( stack[stack_top--] )\n"
-      "#define PUSH( i ) ( stack[++stack_top] = (i) )\n"
+ //     "#define PUSH( i ) ( stack[++stack_top] = (i) )\n"
+      "#define PUSH(arity, exp) stack[stack_top + 1 - arity] = exp; stack_top = stack_top + 1 - arity;\n"
+      "#define ARG(n) stack[stack_top - n]\n"
       "#define CREATE_STACK( type, size ) type stack[size]; int stack_top = -1;\n"
       "#define GENE genome[op]\n"
       + interpreter + m_kernel_src;
@@ -471,6 +483,7 @@ void GP::PrintGenome( const cl_uint* genome ) const
             std::cout << AS_FLOAT(*genome) << " ";
             break;
          case Primitives::GPF_IDENTITY:
+            std::cout << "= ";
             break;
          default:
             std::cout << m_primitives.DB[INDEX(*genome)].symbol << " ";
