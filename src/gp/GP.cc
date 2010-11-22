@@ -65,6 +65,8 @@
 #include <algorithm>
 #include <cassert>
 
+#define MAPPING 1
+
 Params* GP::m_params = 0;
 
 // -----------------------------------------------------------------------------
@@ -122,8 +124,9 @@ void GP::Evolve()
    20: return the best individual so far
    */
 
-   // TODO: See if we can improve this on the CPU version (mapping memory?)
+#ifndef MAPPING
    m_predicted_Y = new cl_float[ m_num_points * m_params->m_population_size ];
+#endif
 
    cl_float* fitness = new cl_float[ m_params->m_population_size ];
    cl_uint* pop_a = new cl_uint[ m_params->m_population_size * (m_params->m_maximum_genome_size + 1) ];
@@ -211,10 +214,15 @@ void GP::EvaluatePopulation( cl_uint* pop, cl_float* fitness )
    // Wait until the kernel has finished
    m_queue.finish();
 
-   // TODO: How about enqueueMapBuffer? (it can be faster)
+   // TODO: Do I need to always Map and Unmap?
+#ifdef MAPPING
+   m_predicted_Y = (cl_float*) m_queue.enqueueMapBuffer( m_buf_predicted_Y, CL_TRUE, 
+         CL_MAP_READ, 0, m_num_points * m_params->m_population_size * sizeof(cl_float) );
+#else
    m_queue.enqueueReadBuffer( m_buf_predicted_Y, CL_TRUE, 0,
          m_num_points * m_params->m_population_size * sizeof(cl_float),
          m_predicted_Y, NULL, NULL );
+#endif
 
    // --- Fitness calculation -----------------
    // TODO: Do this on the GPU!!
@@ -240,6 +248,10 @@ void GP::EvaluatePopulation( cl_uint* pop, cl_float* fitness )
 
       // TODO: Pick the best and fill the elitism vector (if any)
    }
+#ifdef MAPPING
+   m_queue.enqueueUnmapMemObject( m_buf_predicted_Y, m_predicted_Y );
+#endif
+   
 }
 
 // -----------------------------------------------------------------------------
@@ -275,14 +287,20 @@ void GP::CreateBuffers()
 
    // Buffer (memory on the device) of training points
    // TODO: I think m_X can be freed right after cl::Buffer returns. Check that!
+   std::cerr << "Trying to allocate " << sizeof( cl_float ) * m_num_points * m_x_dim << " bytes\n";
    m_buf_X = cl::Buffer( m_context,
                          CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
                          sizeof( cl_float ) * m_num_points * m_x_dim,
                          m_X );
 
    // Buffer (memory on the device) of predicted values
+   std::cerr << "Trying to allocate " << sizeof( cl_float ) * m_num_points * m_params->m_population_size << " bytes\n";
    m_buf_predicted_Y = cl::Buffer( m_context,
+#ifdef MAPPING
+                                   CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
+#else
                                    CL_MEM_WRITE_ONLY,
+#endif
                                    m_num_points * m_params->m_population_size * sizeof(cl_float) );
 
   /* 
@@ -296,10 +314,11 @@ void GP::CreateBuffers()
      |    first element        | second ...
   */
    // Buffer (memory on the device) of the population
+   std::cerr << "Trying to allocate " << sizeof( cl_uint ) * ( m_params->m_population_size * ( m_params->m_maximum_genome_size + 1 ) )  << " bytes\n";
    m_buf_pop = cl::Buffer( m_context,
-                          CL_MEM_READ_ONLY,
-                          sizeof( cl_uint ) * ( m_params->m_population_size * 
-                                                ( m_params->m_maximum_genome_size + 1 ) ) );
+                           CL_MEM_READ_ONLY,
+                           sizeof( cl_uint ) * ( m_params->m_population_size * 
+                                               ( m_params->m_maximum_genome_size + 1 ) ) );
 }
 
 // -----------------------------------------------------------------------------
