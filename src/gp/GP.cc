@@ -24,38 +24,6 @@
 //
 // -----------------------------------------------------------------------------
 
-/*
-   There are five valid combinations of the following three flags:
-   CL_MEM_ALLOC_HOST_PTR, CL_MEM_COPY_HOST_PTR, and CL_MEM_USE_HOST_PTR.
-
-   The combinations are: (1) No flags specified, (2) CL_MEM_COPY_HOST_PTR, (3)
-   CL_MEM_ALLOC_HOST_PTR, (4) CL_MEM_ALLOC_HOST_PTR | CL_MEM_COPY_HOST_PTR, and
-   (5) CL_MEM_USE_HOST_PTR.
-
-   The first two, (1) No flags specified, and (2) CL_MEM_COPY_HOST_PTR, are
-   non-mappable and require clEnqueueReadBuffer, and clEnqueueWriteBuffer to
-   typically transfer data to/from the host from/to the device. The next two,
-   (3) CL_MEM_ALLOC_HOST_PTR, (4) CL_MEM_ALLOC_HOST_PTR | CL_MEM_COPY_HOST_PTR,
-   are mappable and can use clEnqueueMapBuffer, and clEnqueueUnmapMemObject.
-   The last, (5) CL_MEM_USE_HOST_PTR, is also mappable and should use
-   clEnqueueMapBuffer, and clEnqueueUnmapMemObject.
-
-   If you are porting an existing application which already allocates its own
-   buffers, then the fifth combination, CL_MEM_USE_HOST_PTR, may be your only
-   choice. However, this might not be the best performance because the buffer
-   may need to be copied from/to host memory to/from device memory. It is
-   generally felt that the first, (1) No flags specified, and third, (3)
-   CL_MEM_ALLOC_HOST_PTR, combinations are better because they do not require a
-   copy and because the buffer can be allocated internally with constraints
-   such as alignment, etc. Depending upon the overhead for a "bulk" read/write
-   data transfer versus a data transfer for each mapped access can help decided
-   between using non-mappable (1) and mappable (3) combinations.
-
-   Naturally this depends upon the performance characteristics of each vendor's
-   hardware and software implementation, that is, your mileage may vary
-   depending upon the OpenCL that you are using.
-   */
-
 #include "GP.h"
 #include "../common/util/Util.h"
 #include "../common/util/Random.h"
@@ -178,7 +146,7 @@ void GP::Breed( cl_uint* old_pop, cl_uint* new_pop )
    // FIXME:
    for( unsigned i = 0; i < m_params->m_population_size; ++i )
    {
-      CopyGeneMutate( &old_pop[i * (m_params->m_maximum_genome_size + 1)],
+      CopySubTreeMutate( &old_pop[i * (m_params->m_maximum_genome_size + 1)],
                       &new_pop[i * (m_params->m_maximum_genome_size + 1)] );
 #ifndef NDEBUG
       std::cout << std::endl;
@@ -188,6 +156,38 @@ void GP::Breed( cl_uint* old_pop, cl_uint* new_pop )
       std::cout << std::endl;
 #endif
    }
+}
+
+// -----------------------------------------------------------------------------
+void GP::CopySubTreeMutate( const cl_uint* genome_orig, cl_uint* genome_dest ) const
+{
+   // Copy the size (CopyGeneMutate, differently from CopySubTreeMutate doesn't
+   // change the actual size of the genome)
+   assert( genome_orig != NULL && genome_dest != NULL );
+   assert( *genome_orig <= m_params->m_maximum_genome_size );
+
+   unsigned size = *genome_orig;
+   // Pos 0 is the genome size; pos 1 is the first gene and 'genome size + 1'
+   // is the last gene.
+   unsigned mutation_point = Random::Int( 1, size ); // [1, size] (inclusive)
+
+   //                   (mutation point)
+   //                          v
+   // [ ]     [ ]     [ ]     [*]     [*]     [*]     [ ]    [ ]
+   // |      first      |     | mutated subtree |     | second |
+
+   // Copy the size (pos 0) and then the first fragment (until just before the mutation point) 
+   for( unsigned i = 0; i < mutation_point; ++i )
+      genome_dest[i] = genome_orig[i];
+
+   // Create a new random subtree of same size of the original one and put it
+   // in the corresponding place in genome_dest
+   unsigned subtree_size = TreeSize( &genome_orig[mutation_point] );
+   CreateLinearTree( &genome_dest[mutation_point], subtree_size );
+
+   // Continue to copy the second fragment
+   for( unsigned i = mutation_point + subtree_size; i < size + 1; ++i )
+      genome_dest[i] = genome_orig[i];
 }
 
 // -----------------------------------------------------------------------------
@@ -202,6 +202,11 @@ void GP::CopyGeneMutate( const cl_uint* genome_orig, cl_uint* genome_dest ) cons
    // Pos 0 is the genome size; pos 1 is the first gene and 'genome size + 1'
    // is the last gene.
    unsigned mutation_point = Random::Int( 1, size ); // [1, size] (inclusive)
+
+   //                      (mutation point)
+   //                             v
+   // [ ]     [ ]     [ ]        [*]         [ ]     [ ]     [ ]
+   // |      first      |   | mutated pt |   | second          |
 
    // Copy the size (pos 0) and then the first fragment (until just before the mutation point) 
    for( unsigned i = 0; i < mutation_point; ++i )
@@ -570,7 +575,7 @@ void GP::PrintGenome( const cl_uint* genome ) const
 }
 
 // -----------------------------------------------------------------------------
-void GP::CreateLinearTree( cl_uint* genome, unsigned left )
+void GP::CreateLinearTree( cl_uint* genome, unsigned left ) const
 {
    assert( left >= 1 );
    assert( genome != 0 );

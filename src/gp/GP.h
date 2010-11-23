@@ -120,8 +120,19 @@ protected:
    void InitializePopulation( cl_uint* pop );
    void Breed( cl_uint* old_pop, cl_uint* new_pop );
    void Clone( cl_uint* genome_orig, cl_uint* genome_dest ) const;
+   /**
+     Copy the individual @ref genome_orig into @ref genome_dest but
+     with a random subtree mutated--a random subtree of same size is
+     created and put in @ref genome_dest replacing the corresponding
+     subtree in @ref genome_orig.
+    */
+   void CopySubTreeMutate( const cl_uint* genome_orig, cl_uint* genome_dest ) const;
+   /**
+     Copy the individual @ref genome_orig into @ref genome_dest but
+     with a random gene (node) mutated.
+    */
    void CopyGeneMutate( const cl_uint* genome_orig, cl_uint* genome_dest ) const;
-   void CreateLinearTree( cl_uint* genome, unsigned left );
+   void CreateLinearTree( cl_uint* genome, unsigned left ) const;
 
    void PrintGenome( const cl_uint* genome ) const;
    unsigned TreeSize( const cl_uint* tree ) const
