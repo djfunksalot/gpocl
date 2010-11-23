@@ -120,9 +120,22 @@ protected:
    void InitializePopulation( cl_uint* pop );
    void Breed( cl_uint* old_pop, cl_uint* new_pop );
    void Clone( cl_uint* genome_orig, cl_uint* genome_dest ) const;
+   void CopyGeneMutate( const cl_uint* genome_orig, cl_uint* genome_dest ) const;
    void CreateLinearTree( cl_uint* genome, unsigned left );
 
    void PrintGenome( const cl_uint* genome ) const;
+   unsigned TreeSize( const cl_uint* tree ) const
+   {
+      /* We have a valid tree when the sum of the arity minus one equals to -1 */
+      unsigned size = 0; int sum = 0;
+      do {
+         ++size;
+         sum += ARITY( *tree++ ) - 1;
+      } while( sum != -1 );
+
+      return size;
+   }
+
    virtual void LoadPoints() = 0;
 
    Primitives m_primitives;

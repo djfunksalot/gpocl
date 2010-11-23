@@ -179,7 +179,7 @@ void Primitives::Load( unsigned x_dim, unsigned max_gen_size, const std::string&
 }
 
 // -----------------------------------------------------------------------------
-cl_uint Primitives::RandomGene( unsigned min, unsigned max )
+cl_uint Primitives::RandomGene( unsigned min, unsigned max ) const
 {
    // TODO: if min == max == 1 and the user didn't give a function requiring
    // one argument, then return GPF_IDENTITY. (what about removing GPF_IDENTITY

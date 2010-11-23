@@ -175,6 +175,46 @@ void GP::Breed( cl_uint* old_pop, cl_uint* new_pop )
    }
 
    // Genetic operations
+   // FIXME:
+   for( unsigned i = 0; i < m_params->m_population_size; ++i )
+   {
+      CopyGeneMutate( &old_pop[i * (m_params->m_maximum_genome_size + 1)],
+                      &new_pop[i * (m_params->m_maximum_genome_size + 1)] );
+#ifndef NDEBUG
+      std::cout << std::endl;
+      PrintGenome( &old_pop[i * (m_params->m_maximum_genome_size + 1)] );
+      std::cout << std::endl;
+      PrintGenome( &new_pop[i * (m_params->m_maximum_genome_size + 1)] );
+      std::cout << std::endl;
+#endif
+   }
+}
+
+// -----------------------------------------------------------------------------
+void GP::CopyGeneMutate( const cl_uint* genome_orig, cl_uint* genome_dest ) const
+{
+   // Copy the size (CopyGeneMutate, differently from CopySubTreeMutate doesn't
+   // change the actual size of the genome)
+   assert( genome_orig != NULL && genome_dest != NULL );
+   assert( *genome_orig <= m_params->m_maximum_genome_size );
+
+   unsigned size = *genome_orig;
+   // Pos 0 is the genome size; pos 1 is the first gene and 'genome size + 1'
+   // is the last gene.
+   unsigned mutation_point = Random::Int( 1, size ); // [1, size] (inclusive)
+
+   // Copy the size (pos 0) and then the first fragment (until just before the mutation point) 
+   for( unsigned i = 0; i < mutation_point; ++i )
+      genome_dest[i] = genome_orig[i];
+
+   // Mutate the gene by a random gene of the same arity (remember, this is *gene*
+   // mutation!).
+   genome_dest[mutation_point] = m_primitives.RandomGene( ARITY( genome_orig[mutation_point] ),
+                                                          ARITY( genome_orig[mutation_point] ) );
+
+   // Continue to copy the second fragment
+   for( unsigned i = mutation_point + 1; i < size + 1; ++i )
+      genome_dest[i] = genome_orig[i];
 }
 
 // -----------------------------------------------------------------------------
@@ -488,11 +528,20 @@ void GP::InitializePopulation( cl_uint* pop )
 // -----------------------------------------------------------------------------
 void GP::PrintGenome( const cl_uint* genome ) const
 {
+   // FIXME: remove checking
+#ifndef NDEBUG
+   if( TreeSize( &genome[1] ) != *genome ) throw Error( "Stored size doesn't match actual size." );
+
    int sum = *genome;
+#endif
 
    for( unsigned i = *genome; i-- ; )
    {
+#ifndef NDEBUG
       sum -= ARITY( *(++genome) );
+#else
+      ++genome;
+#endif
      // std::cout << "[" << ARITY(*genome) << "," << INDEX(*genome) << "," 
        //         << (INDEX(*genome) == Primitives::GPT_EPHEMERAL ? AS_FLOAT(*genome) : AS_INT(*genome)) << "]";
 
@@ -512,9 +561,12 @@ void GP::PrintGenome( const cl_uint* genome ) const
       }
    }
 
+   // FIXME: (remove checking)
    //std::cerr << "\nSize: " << size << " Sum: " << sum << std::endl;
    //std::cout << " (CRC: " << sum << ")"; 
+#ifndef NDEBUG
    if( sum != 1 ) throw Error( "CRC != 1" );
+#endif
 }
 
 // -----------------------------------------------------------------------------
