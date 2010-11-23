@@ -58,7 +58,7 @@ void Primitives::Load( unsigned x_dim, unsigned max_gen_size, const std::string&
    Register( 1, "identity",     "_",            "ARG(0)" );
    assert( GPF_IDENTITY == DB.size() - 1 );
 
-   Register( 3, "ifthenelse",   "ITE",          "ARG(0) ? ARG(1) : ARG(2)" );
+   Register( 3, "ifthenelse",   "ite",          "ARG(0) ? ARG(1) : ARG(2)" );
 
    Register( 2, "add",          "+",            "ARG(0) + ARG(1)" );
    Register( 2, "minus",        "-",            "ARG(0) - ARG(1)" );
@@ -71,6 +71,7 @@ void Primitives::Load( unsigned x_dim, unsigned max_gen_size, const std::string&
    Register( 2, "greaterequal", ">=",           "ARG(0) >= ARG(1)" );
    Register( 2, "and",          "&&",           "ARG(0) && ARG(1)" );
    Register( 2, "or",           "||",           "ARG(0) || ARG(1)" );
+   Register( 2, "pow",          "^",            "pow(ARG(0), ARG(1))" );
 
    Register( 1, "sin",          "sin",          "sin(ARG(0))" );
    Register( 1, "cos",          "cos",          "cos(ARG(0))" );

@@ -169,13 +169,13 @@ void GP::Breed( cl_uint* old_pop, cl_uint* new_pop, const cl_float* errors )
    // Genetic operations
    // FIXME:
       CopySubTreeMutate( Program( old_pop, winner ), Program( new_pop, i ) );
-#ifndef NDEBUG
+/*#ifndef NDEBUG
       std::cout << std::endl;
       PrintProgram( Program( old_pop, i ) );
       std::cout << std::endl;
       PrintProgram( Program( new_pop, i ) );
       std::cout << std::endl;
-#endif
+#endif*/
    }
 }
 
@@ -305,15 +305,25 @@ bool GP::EvaluatePopulation( cl_uint* pop, cl_float* errors )
    for( unsigned i = 0; i < m_params->m_population_size; ++i )
    {
       errors[i] = 0.0f;
-      // TODO: check for nan/infinity
-      // sum of the squared error
-  //    std::cout << "\n[";
+
       for( unsigned j = 0; j < m_num_points; ++j )
       {
-   //      std::cout << m_predicted_Y[i * m_num_points + j] << " ";
-        // errors[i] += std::pow( m_predicted_Y[i * m_num_points + j] - m_Y[j], 2 );
-         errors[i] += std::abs( m_predicted_Y[i * m_num_points + j] - m_Y[j] );
+      // sum of the squared error
+         errors[i] += std::pow( m_predicted_Y[i * m_num_points + j] - m_Y[j], 2 );
+        // errors[i] += std::abs( m_predicted_Y[i * m_num_points + j] - m_Y[j] );
       }
+
+      // If isnan then something went wrong
+      assert( !isnan( errors[i] ) );
+
+      if( isinf( errors[i] ) )
+      {
+         // Set the worst error possible
+         errors[i] = std::numeric_limits<cl_float>::max();
+
+         continue;
+      }
+
 
       // Check whether we have found a better solution
       if( errors[i] < m_best_error  ||
@@ -326,14 +336,6 @@ bool GP::EvaluatePopulation( cl_uint* pop, cl_float* errors )
          PrintProgram( m_best_program );
          std::cout << " (error: " << m_best_error << ")\n";
       }
-
-    //  std::cout << "]";
-
-      /*
-      std::cout << "(" << i << ")[";
-      PrintProgram( &pop[i * (m_params->m_maximum_tree_size + 1)] );
-      std::cout << "] (Err: " << errors[i] << ")\n";
-      */
 
       // TODO: Pick the best and fill the elitism vector (if any)
    }
@@ -610,7 +612,7 @@ void GP::PrintTree( const cl_uint* node ) const
 void GP::CreateLinearTree( cl_uint* node, unsigned size ) const
 {
    assert( size >= 1 );
-   assert( program != 0 );
+   assert( node != 0 );
 
    unsigned open = 1;
 

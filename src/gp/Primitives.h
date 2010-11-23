@@ -108,7 +108,7 @@ private:
       return PackNode( arity, type ) | index;
    }
    cl_uint PackNode( cl_uint arity, cl_uint type, cl_float value ) const {
-      unsigned packed_value = util::RndPosNum<unsigned>( value * COMPACT_RANGE / 1024 );
+      unsigned packed_value = util::RndPosNum<unsigned>( value * COMPACT_RANGE / SCALE_FACTOR );
       // Checking bounds, i.e. can packed_value fit in 22 bits?)
       assert( ! (packed_value & 0xFFC00000) ); // 0xFFC00000 = 11111111 11000000 00000000 00000000
 
