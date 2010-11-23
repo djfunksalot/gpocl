@@ -385,8 +385,8 @@ void GP::BuildKernel()
       "#define TOP       ( stack[stack_top] )\n"
       "#define POP       ( stack[stack_top--] )\n"
  //     "#define PUSH( i ) ( stack[++stack_top] = (i) )\n"
-      "#define PUSH(arity, exp) stack[stack_top + 1 - arity] = exp; stack_top = stack_top + 1 - arity;\n"
-      "#define ARG(n) stack[stack_top - n]\n"
+      "#define PUSH(arity, exp) stack[stack_top + 1 - arity] = (exp); stack_top = stack_top + 1 - arity;\n"
+      "#define ARG(n) (stack[stack_top - n])\n"
       "#define CREATE_STACK( type, size ) type stack[size]; int stack_top = -1;\n"
       "#define GENE genome[op]\n"
       + interpreter + m_kernel_src;
