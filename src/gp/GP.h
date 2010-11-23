@@ -172,6 +172,7 @@ protected:
       return Program( pop, i ) + 1; 
    }
 
+   void SetProgramSize( cl_uint* program, unsigned size ) const { *program = size; }
 
    void EvaluatePopulation( cl_uint* pop, cl_float* errors );
    void InitializePopulation( cl_uint* pop );

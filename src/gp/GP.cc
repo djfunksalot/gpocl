@@ -142,20 +142,19 @@ void GP::Breed( cl_uint* old_pop, cl_uint* new_pop )
    for( unsigned i = 0; i < m_params->m_elitism_size; ++i )
    {
       // FIXME: (use the vector of best individuals)
-      Clone( Program( old_pop, i ), Program( new_pop, i ) );
-
-      // TODO: remove:
-      //PrintProgram( &new_pop[i * (m_params->m_maximum_tree_size + 1)] );
+      Clone( m_best_program, Program( new_pop, i ) );
    }
 
    // Genetic operations
    // FIXME:
-   for( unsigned i = 0; i < m_params->m_population_size; ++i )
+   for( unsigned i = m_params->m_elitism_size; i < m_params->m_population_size; ++i )
    {
-      CopySubTreeMutate( Program( old_pop, i ), Program( new_pop, i ) );
+      //CopySubTreeMutate( Program( old_pop, i ), Program( new_pop, i ) );
+      CopySubTreeMutate( m_best_program, Program( new_pop, i ) );
 #ifndef NDEBUG
       std::cout << std::endl;
       PrintProgram( Program( old_pop, i ) );
+     // PrintProgram( Program( new_pop, 0 ) );
       std::cout << std::endl;
       PrintProgram( Program( new_pop, i ) );
       std::cout << std::endl;
@@ -166,10 +165,12 @@ void GP::Breed( cl_uint* old_pop, cl_uint* new_pop )
 // -----------------------------------------------------------------------------
 void GP::CopySubTreeMutate( const cl_uint* program_orig, cl_uint* program_dest ) const
 {
+#define CAN_CHANGE_ORIGINAL_SIZE 1
+
    // Copy the size (CopyNodeMutate, differently from CopySubTreeMutate doesn't
    // change the actual size of the program)
-   assert( program_orig != NULL && program_dest != NULL );
-   assert( *program_orig <= MaximumTreeSize() );
+   assert( program_orig != NULL && program_dest != NULL && program_orig != program_dest );
+   assert( ProgramSize( program_orig ) <= MaximumTreeSize() );
 
    unsigned size = *program_orig;
    // Pos 0 is the program size; pos 1 is the first node and 'program size + 1'
@@ -181,18 +182,28 @@ void GP::CopySubTreeMutate( const cl_uint* program_orig, cl_uint* program_dest )
    // [ ]     [ ]     [ ]     [*]     [*]     [*]     [ ]    [ ]
    // |      first      |     | mutated subtree |     | second |
 
-   // Copy the size (pos 0) and then the first fragment (until just before the mutation point) 
-   for( unsigned i = 0; i < mutation_point; ++i )
+   // Copy the first fragment but not the size (for now).
+   for( unsigned i = 1; i < mutation_point; ++i )
       program_dest[i] = program_orig[i];
 
    // Create a new random subtree of same size of the original one and put it
    // in the corresponding place in program_dest
    unsigned subtree_size = TreeSize( &program_orig[mutation_point] );
-   CreateLinearTree( &program_dest[mutation_point], subtree_size );
+#ifdef CAN_CHANGE_ORIGINAL_SIZE
+   unsigned new_subtree_size = Random::Int( 1, 
+         MaximumTreeSize() - ( ProgramSize( program_orig ) - subtree_size ) );
+#else
+   unsigned new_subtree_size = subtree_size;
+#endif
+   CreateLinearTree( &program_dest[mutation_point], new_subtree_size );
 
    // Continue to copy the second fragment
    for( unsigned i = mutation_point + subtree_size; i < size + 1; ++i )
-      program_dest[i] = program_orig[i];
+      program_dest[i + (new_subtree_size - subtree_size)] = program_orig[i];
+
+   // Finally, set the resulting tree size to the newly generated program
+   SetProgramSize( program_dest, ProgramSize( program_orig ) + 
+                                (new_subtree_size - subtree_size ) );
 }
 
 // -----------------------------------------------------------------------------
@@ -200,8 +211,8 @@ void GP::CopyNodeMutate( const cl_uint* program_orig, cl_uint* program_dest ) co
 {
    // Copy the size (CopyNodeMutate, differently from CopySubTreeMutate doesn't
    // change the actual size of the program)
-   assert( program_orig != NULL && program_dest != NULL );
-   assert( *program_orig <= MaximumTreeSize() );
+   assert( program_orig != NULL && program_dest != NULL && program_orig != program_dest );
+   assert( ProgramSize( program_orig ) <= MaximumTreeSize() );
 
    unsigned size = *program_orig;
    // Pos 0 is the program size; pos 1 is the first node and 'program size + 1'
