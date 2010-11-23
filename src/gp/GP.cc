@@ -129,6 +129,11 @@ void GP::Evolve()
       std::swap( cur_pop, tmp_pop );
    } // 19
 
+   // 20:
+   std::cout << "\nBest program found: ";
+   PrintProgram( m_best_program );
+   std::cout << " (error: " << m_best_error << ")\n";
+
    // Clean up
    delete[] pop_a;
    delete[] pop_b;
