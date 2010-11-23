@@ -42,3 +42,4 @@ configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/kernels/common.cl ${CMAKE_BINARY_DIR
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/kernels/cpu.cl ${CMAKE_BINARY_DIR}/kernels/cpu.cl COPYONLY)
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/kernels/gpu_ppcu.cl ${CMAKE_BINARY_DIR}/kernels/gpu_ppcu.cl COPYONLY)
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/kernels/gpu_ppce.cl ${CMAKE_BINARY_DIR}/kernels/gpu_ppce.cl COPYONLY)
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/kernels/gpu_fpi.cl ${CMAKE_BINARY_DIR}/kernels/gpu_fpi.cl COPYONLY)
