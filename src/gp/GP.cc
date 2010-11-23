@@ -43,7 +43,7 @@ GP::GP( Params& p, cl_device_type device_type ): m_device_type( device_type ),
                                                  m_num_points( 0 ),
                                                  m_y_dim( 1 ), 
                                                  m_x_dim( 0 ),
-                                                 m_best_fitness( std::numeric_limits<cl_float>::max() )
+                                                 m_best_error( std::numeric_limits<cl_float>::max() )
 {
    m_params = &p;
 
@@ -63,9 +63,9 @@ GP::GP( Params& p, cl_device_type device_type ): m_device_type( device_type ),
    }
 
    // Create room for the best individual so far
-   m_best_genome = new cl_uint[m_params->m_maximum_genome_size + 1];
+   m_best_program = new cl_uint[MaximumProgramSize()];
    // Set its size as zero
-   m_best_genome[0] = 0;
+   m_best_program[0] = 0;
 }
 
 // -----------------------------------------------------------------------------
@@ -101,9 +101,9 @@ void GP::Evolve()
    m_predicted_Y = new cl_float[ m_num_points * m_params->m_population_size ];
 #endif
 
-   cl_float* fitness = new cl_float[ m_params->m_population_size ];
-   cl_uint* pop_a = new cl_uint[ m_params->m_population_size * (m_params->m_maximum_genome_size + 1) ];
-   cl_uint* pop_b = new cl_uint[ m_params->m_population_size * (m_params->m_maximum_genome_size + 1) ];
+   cl_float* errors = new cl_float[ m_params->m_population_size ];
+   cl_uint* pop_a = new cl_uint[ m_params->m_population_size * MaximumProgramSize() ];
+   cl_uint* pop_b = new cl_uint[ m_params->m_population_size * MaximumProgramSize() ];
 
    cl_uint* cur_pop = pop_a;
    cl_uint* tmp_pop = pop_b;
@@ -112,7 +112,7 @@ void GP::Evolve()
    std::cout << "Evolving initial generation... ";
    InitializePopulation( cur_pop );
    // 2:
-   EvaluatePopulation( cur_pop, fitness );
+   EvaluatePopulation( cur_pop, errors );
    std::cout << "done.\n";
 
    // 3:
@@ -122,7 +122,7 @@ void GP::Evolve()
       // 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16:
       Breed( cur_pop, tmp_pop );
       // 17:
-      EvaluatePopulation( tmp_pop, fitness );
+      EvaluatePopulation( tmp_pop, errors );
       std::cout << "done.\n";
 
       // 18:
@@ -132,7 +132,7 @@ void GP::Evolve()
    // Clean up
    delete[] pop_a;
    delete[] pop_b;
-   delete[] fitness;
+   delete[] errors;
 }
 
 // -----------------------------------------------------------------------------
@@ -142,38 +142,38 @@ void GP::Breed( cl_uint* old_pop, cl_uint* new_pop )
    for( unsigned i = 0; i < m_params->m_elitism_size; ++i )
    {
       // FIXME: (use the vector of best individuals)
-      Clone( Genome( old_pop, i ), Genome( new_pop, i ) );
+      Clone( Program( old_pop, i ), Program( new_pop, i ) );
 
       // TODO: remove:
-      //PrintGenome( &new_pop[i * (m_params->m_maximum_genome_size + 1)] );
+      //PrintProgram( &new_pop[i * (m_params->m_maximum_tree_size + 1)] );
    }
 
    // Genetic operations
    // FIXME:
    for( unsigned i = 0; i < m_params->m_population_size; ++i )
    {
-      CopySubTreeMutate( Genome( old_pop, i ), Genome( new_pop, i ) );
+      CopySubTreeMutate( Program( old_pop, i ), Program( new_pop, i ) );
 #ifndef NDEBUG
       std::cout << std::endl;
-      PrintGenome( &old_pop[i * (m_params->m_maximum_genome_size + 1)] );
+      PrintProgram( Program( old_pop, i ) );
       std::cout << std::endl;
-      PrintGenome( &new_pop[i * (m_params->m_maximum_genome_size + 1)] );
+      PrintProgram( Program( new_pop, i ) );
       std::cout << std::endl;
 #endif
    }
 }
 
 // -----------------------------------------------------------------------------
-void GP::CopySubTreeMutate( const cl_uint* genome_orig, cl_uint* genome_dest ) const
+void GP::CopySubTreeMutate( const cl_uint* program_orig, cl_uint* program_dest ) const
 {
-   // Copy the size (CopyGeneMutate, differently from CopySubTreeMutate doesn't
-   // change the actual size of the genome)
-   assert( genome_orig != NULL && genome_dest != NULL );
-   assert( *genome_orig <= m_params->m_maximum_genome_size );
+   // Copy the size (CopyNodeMutate, differently from CopySubTreeMutate doesn't
+   // change the actual size of the program)
+   assert( program_orig != NULL && program_dest != NULL );
+   assert( *program_orig <= MaximumTreeSize() );
 
-   unsigned size = *genome_orig;
-   // Pos 0 is the genome size; pos 1 is the first gene and 'genome size + 1'
-   // is the last gene.
+   unsigned size = *program_orig;
+   // Pos 0 is the program size; pos 1 is the first node and 'program size + 1'
+   // is the last node.
    unsigned mutation_point = Random::Int( 1, size ); // [1, size] (inclusive)
 
    //                   (mutation point)
@@ -183,29 +183,29 @@ void GP::CopySubTreeMutate( const cl_uint* genome_orig, cl_uint* genome_dest ) c
 
    // Copy the size (pos 0) and then the first fragment (until just before the mutation point) 
    for( unsigned i = 0; i < mutation_point; ++i )
-      genome_dest[i] = genome_orig[i];
+      program_dest[i] = program_orig[i];
 
    // Create a new random subtree of same size of the original one and put it
-   // in the corresponding place in genome_dest
-   unsigned subtree_size = TreeSize( &genome_orig[mutation_point] );
-   CreateLinearTree( &genome_dest[mutation_point], subtree_size );
+   // in the corresponding place in program_dest
+   unsigned subtree_size = TreeSize( &program_orig[mutation_point] );
+   CreateLinearTree( &program_dest[mutation_point], subtree_size );
 
    // Continue to copy the second fragment
    for( unsigned i = mutation_point + subtree_size; i < size + 1; ++i )
-      genome_dest[i] = genome_orig[i];
+      program_dest[i] = program_orig[i];
 }
 
 // -----------------------------------------------------------------------------
-void GP::CopyGeneMutate( const cl_uint* genome_orig, cl_uint* genome_dest ) const
+void GP::CopyNodeMutate( const cl_uint* program_orig, cl_uint* program_dest ) const
 {
-   // Copy the size (CopyGeneMutate, differently from CopySubTreeMutate doesn't
-   // change the actual size of the genome)
-   assert( genome_orig != NULL && genome_dest != NULL );
-   assert( *genome_orig <= m_params->m_maximum_genome_size );
+   // Copy the size (CopyNodeMutate, differently from CopySubTreeMutate doesn't
+   // change the actual size of the program)
+   assert( program_orig != NULL && program_dest != NULL );
+   assert( *program_orig <= MaximumTreeSize() );
 
-   unsigned size = *genome_orig;
-   // Pos 0 is the genome size; pos 1 is the first gene and 'genome size + 1'
-   // is the last gene.
+   unsigned size = *program_orig;
+   // Pos 0 is the program size; pos 1 is the first node and 'program size + 1'
+   // is the last node.
    unsigned mutation_point = Random::Int( 1, size ); // [1, size] (inclusive)
 
    //                      (mutation point)
@@ -215,31 +215,31 @@ void GP::CopyGeneMutate( const cl_uint* genome_orig, cl_uint* genome_dest ) cons
 
    // Copy the size (pos 0) and then the first fragment (until just before the mutation point) 
    for( unsigned i = 0; i < mutation_point; ++i )
-      genome_dest[i] = genome_orig[i];
+      program_dest[i] = program_orig[i];
 
-   // Mutate the gene by a random gene of the same arity (remember, this is *gene*
+   // Mutate the node by a random node of the same arity (remember, this is *node*
    // mutation!).
-   genome_dest[mutation_point] = m_primitives.RandomGene( ARITY( genome_orig[mutation_point] ),
-                                                          ARITY( genome_orig[mutation_point] ) );
+   program_dest[mutation_point] = m_primitives.RandomNode( ARITY( program_orig[mutation_point] ),
+                                                          ARITY( program_orig[mutation_point] ) );
 
    // Continue to copy the second fragment
    for( unsigned i = mutation_point + 1; i < size + 1; ++i )
-      genome_dest[i] = genome_orig[i];
+      program_dest[i] = program_orig[i];
 }
 
 // -----------------------------------------------------------------------------
-void GP::Clone( cl_uint* genome_orig, cl_uint* genome_dest ) const
+void GP::Clone( cl_uint* program_orig, cl_uint* program_dest ) const
 {
-   assert( genome_orig != NULL && genome_dest != NULL );
-   assert( *genome_orig <= m_params->m_maximum_genome_size );
+   assert( program_orig != NULL && program_dest != NULL );
+   assert( *program_orig <= MaximumTreeSize() );
 
    // The size is the first element
-   for( unsigned i = *genome_orig + 1; i-- ; )
-      *genome_dest++ = *genome_orig++;
+   for( unsigned i = *program_orig + 1; i-- ; )
+      *program_dest++ = *program_orig++;
 }
 
 // -----------------------------------------------------------------------------
-void GP::EvaluatePopulation( cl_uint* pop, cl_float* fitness )
+void GP::EvaluatePopulation( cl_uint* pop, cl_float* errors )
 {
    // Write data to buffer (TODO: can we use mapbuffer here?)
    /* 
@@ -251,7 +251,7 @@ void GP::EvaluatePopulation( cl_uint* pop, cl_float* fitness )
       does mapbuffer keep a copy (synchronized) in the host?
       */
    m_queue.enqueueWriteBuffer( m_buf_pop, CL_TRUE, 0, 
-         sizeof( cl_uint ) * ( m_params->m_population_size * ( m_params->m_maximum_genome_size + 1 ) ),
+         sizeof( cl_uint ) * ( m_params->m_population_size * MaximumProgramSize() ),
          pop, NULL, NULL);
 
    // ---------- begin kernel execution
@@ -276,35 +276,35 @@ void GP::EvaluatePopulation( cl_uint* pop, cl_float* fitness )
    // TODO: Do this on the GPU!!
    for( unsigned i = 0; i < m_params->m_population_size; ++i )
    {
-      fitness[i] = 0.0f;
+      errors[i] = 0.0f;
       // TODO: check for nan/infinity
       // sum of the squared error
   //    std::cout << "\n[";
       for( unsigned j = 0; j < m_num_points; ++j )
       {
    //      std::cout << m_predicted_Y[i * m_num_points + j] << " ";
-        // fitness[i] += std::pow( m_predicted_Y[i * m_num_points + j] - m_Y[j], 2 );
-         fitness[i] += std::abs( m_predicted_Y[i * m_num_points + j] - m_Y[j] );
+        // errors[i] += std::pow( m_predicted_Y[i * m_num_points + j] - m_Y[j], 2 );
+         errors[i] += std::abs( m_predicted_Y[i * m_num_points + j] - m_Y[j] );
       }
 
       // Check whether we have found a better solution
-      if( fitness[i] < m_best_fitness  ||
-         (fitness[i] == m_best_fitness && GenomeSize( pop, i ) < GenomeSize( m_best_genome ) ) )
+      if( errors[i] < m_best_error  ||
+         (errors[i] == m_best_error && ProgramSize( pop, i ) < ProgramSize( m_best_program ) ) )
       {
-         m_best_fitness = fitness[i];
-         Clone( Genome( pop, i ), m_best_genome );
+         m_best_error = errors[i];
+         Clone( Program( pop, i ), m_best_program );
 
          std::cout << "\nBest so far: ";
-         PrintGenome( m_best_genome );
-         std::cout << " (error: " << m_best_fitness << ")\n";
+         PrintProgram( m_best_program );
+         std::cout << " (error: " << m_best_error << ")\n";
       }
 
     //  std::cout << "]";
 
       /*
       std::cout << "(" << i << ")[";
-      PrintGenome( &pop[i * (m_params->m_maximum_genome_size + 1)] );
-      std::cout << "] (Err: " << fitness[i] << ")\n";
+      PrintProgram( &pop[i * (m_params->m_maximum_tree_size + 1)] );
+      std::cout << "] (Err: " << errors[i] << ")\n";
       */
 
       // TODO: Pick the best and fill the elitism vector (if any)
@@ -365,7 +365,7 @@ void GP::CreateBuffers()
                                    m_num_points * m_params->m_population_size * sizeof(cl_float) );
 
   /* 
-   Structure of a genome (individual)
+   Structure of a program (individual)
 
      |                         |
 +----+-----+----+--------------+-------------
@@ -375,11 +375,11 @@ void GP::CreateBuffers()
      |    first element        | second ...
   */
    // Buffer (memory on the device) of the population
-   std::cerr << "Trying to allocate " << sizeof( cl_uint ) * ( m_params->m_population_size * ( m_params->m_maximum_genome_size + 1 ) )  << " bytes\n";
+   std::cerr << "Trying to allocate " << sizeof( cl_uint ) * ( m_params->m_population_size * MaximumProgramSize() )  << " bytes\n";
    m_buf_pop = cl::Buffer( m_context,
                            CL_MEM_READ_ONLY,
                            sizeof( cl_uint ) * ( m_params->m_population_size * 
-                                               ( m_params->m_maximum_genome_size + 1 ) ) );
+                                               MaximumProgramSize() ) );
 }
 
 // -----------------------------------------------------------------------------
@@ -402,7 +402,7 @@ void GP::BuildKernel()
 
    // program_src = header + kernel
    std::string program_src = 
-      "#define MAX_GENOME_SIZE " + util::ToString( m_params->m_maximum_genome_size ) + "\n" +
+      "#define MAX_TREE_SIZE " + util::ToString( MaximumTreeSize() ) + "\n" +
       "#define NUM_POINTS " + util::ToString( m_num_points ) + "\n"
       "#define X_DIM " + util::ToString( m_x_dim ) + "\n"
       "#define TOP       ( stack[stack_top] )\n"
@@ -411,7 +411,7 @@ void GP::BuildKernel()
       "#define PUSH(arity, exp) stack[stack_top + 1 - arity] = (exp); stack_top = stack_top + 1 - arity;\n"
       "#define ARG(n) (stack[stack_top - n])\n"
       "#define CREATE_STACK( type, size ) type stack[size]; int stack_top = -1;\n"
-      "#define GENE genome[op]\n"
+      "#define NODE program[op]\n"
       + interpreter + m_kernel_src;
 
    // FIXME:
@@ -452,7 +452,7 @@ void GP::BuildKernel()
    m_kernel.setArg( 0, m_buf_pop );
    m_kernel.setArg( 1, m_buf_X );
    m_kernel.setArg( 2, m_buf_predicted_Y );
-   m_kernel.setArg( 3, sizeof(uint) * m_params->m_maximum_genome_size, NULL );
+   m_kernel.setArg( 3, sizeof(uint) * MaximumTreeSize(), NULL );
 }
 
 // -----------------------------------------------------------------------------
@@ -534,100 +534,82 @@ void GP::InitializePopulation( cl_uint* pop )
    for( cl_uint i = 0; i < m_params->m_population_size; ++i )
    {
       // TODO: how about using a normal distribution (with mean = max_gen_size/2)?
-      cl_uint size = Random::Int( 1, m_params->m_maximum_genome_size );
+      cl_uint tree_size = Random::Int( 1, MaximumTreeSize() );
 
-      cl_uint idx = i * (m_params->m_maximum_genome_size + 1);
-      // The first "gene" is the genome's size
-      pop[idx++] = size;
+      cl_uint* program = Program( pop, i );
 
-      CreateLinearTree( pop + idx, size );
+      // The first "node" is the program's size
+      *program = tree_size;
 
-      // TODO: remove:
-     // PrintGenome( pop + idx - 1 );
-
+      CreateLinearTree( ++program, tree_size );
    }
 }
 
 // -----------------------------------------------------------------------------
-void GP::PrintGenome( const cl_uint* genome ) const
+void GP::PrintProgram( const cl_uint* program ) const
 {
-   // FIXME: remove checking
-#ifndef NDEBUG
-   if( TreeSize( &genome[1] ) != *genome ) throw Error( "Stored size doesn't match actual size." );
+   PrintTree( program + 1 );
+}
 
-   int sum = *genome;
-#endif
+void GP::PrintTree( const cl_uint* node ) const
+{
+   int sum = 0;
 
-   for( unsigned i = *genome; i-- ; )
-   {
-#ifndef NDEBUG
-      sum -= ARITY( *(++genome) );
-#else
-      ++genome;
-#endif
-     // std::cout << "[" << ARITY(*genome) << "," << INDEX(*genome) << "," 
-       //         << (INDEX(*genome) == Primitives::GPT_EPHEMERAL ? AS_FLOAT(*genome) : AS_INT(*genome)) << "]";
-
-      switch( INDEX(*genome) )
+   do {
+      switch( INDEX(*node) )
       {
          case Primitives::GPT_VAR:
-            std::cout << "X" << AS_INT(*genome) << " ";
+            std::cout << "X" << AS_INT(*node) << " ";
             break;
          case Primitives::GPT_EPHEMERAL:
-            std::cout << AS_FLOAT(*genome) << " ";
+            std::cout << AS_FLOAT(*node) << " ";
             break;
          case Primitives::GPF_IDENTITY:
             std::cout << "= ";
             break;
          default:
-            std::cout << m_primitives.DB[INDEX(*genome)].symbol << " ";
+            std::cout << m_primitives.DB[INDEX(*node)].symbol << " ";
       }
-   }
 
-   // FIXME: (remove checking)
-   //std::cerr << "\nSize: " << size << " Sum: " << sum << std::endl;
-   //std::cout << " (CRC: " << sum << ")"; 
-#ifndef NDEBUG
-   if( sum != 1 ) throw Error( "CRC != 1" );
-#endif
+      sum += ARITY( *node++ ) - 1;
+   } while( sum != -1 );
 }
 
 // -----------------------------------------------------------------------------
-void GP::CreateLinearTree( cl_uint* genome, unsigned left ) const
+void GP::CreateLinearTree( cl_uint* node, unsigned size ) const
 {
-   assert( left >= 1 );
-   assert( genome != 0 );
+   assert( size >= 1 );
+   assert( program != 0 );
 
    unsigned open = 1;
 
    do {
-      if( open == left || open > 1 )
+      if( open == size || open > 1 )
          /* 
-            [open == left] When the number of open arguments is equal the
-            number of left genes, then the only valid choice is a terminal
-            (RandomGene( 0, 0 )), otherwise we would end up with a genome
+            [open == size] When the number of open arguments is equal the
+            number of left nodes, then the only valid choice is a terminal
+            (RandomNode( 0, 0 )), otherwise we would end up with a program
             greater than its size.
 
             [open > 1] When the number of open arguments is greater than one,
             then we can allow terminals to be chosen because they will not
-            prematurely end the genome.
+            prematurely end the program.
           */
-         *genome = m_primitives.RandomGene( 0, left - open );
+         *node = m_primitives.RandomNode( 0, size - open );
       else
-         /* This means that 'open == 1' and 'left > 1', so we cannot choose
-            a terminal here because we would end up with a shorter genome. */
-         *genome = m_primitives.RandomGene( 1, left - open );
+         /* This means that 'open == 1' and 'size > 1', so we cannot choose
+            a terminal here because we would end up with a shorter program. */
+         *node = m_primitives.RandomNode( 1, size - open );
 
       /* Whenever we put a new operator/operand, the number of open arguments
          decreases. However, if the new operator requires more than one argument
          (arity >= 2) then we end up increasing the current number of open arguments.
        */
-      open += ARITY( *genome++ ) - 1;
-   } while( --left );
+      open += ARITY( *node++ ) - 1;
+   } while( --size );
 }
 
 // -----------------------------------------------------------------------------
-//void GP::LoadPoints( std::vector<std::vector<float> > & out_x, std::vector<float> & out_y )
 void GP::LoadPoints( std::vector<std::vector<cl_float> > & out_x )
 {
    using namespace util;

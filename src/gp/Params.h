@@ -90,7 +90,7 @@ public:
    long m_seed; /**< GP seed */
    int m_selection_pressure; /**< Selection pressure */
    int m_elitism_size; /**< Elitism size */
-   int m_maximum_genome_size; /**< The maximum allowed size for a genome. */
+   int m_maximum_tree_size; /**< The maximum allowed size for a program. */
    float m_crossover_probability; /**< Crossover probability */
    float m_mutation_probability; /**< Mutation probability */
 

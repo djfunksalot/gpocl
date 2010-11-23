@@ -53,7 +53,7 @@ void Primitives::Register( cl_uint arity, const std::string& name,
 void Primitives::Load( unsigned x_dim, unsigned max_gen_size, const std::string& primitives )
 {
    /* The first two primitives are special, they need to be the first ones. */
-   Register( 0, "ephemeral",    "",             "AS_FLOAT( GENE )" );
+   Register( 0, "ephemeral",    "",             "AS_FLOAT( NODE )" );
    assert( GPT_EPHEMERAL == DB.size() - 1 );
    Register( 1, "identity",     "_",            "ARG(0)" );
    assert( GPF_IDENTITY == DB.size() - 1 );
@@ -110,16 +110,16 @@ void Primitives::Load( unsigned x_dim, unsigned max_gen_size, const std::string&
    // Adding all problem variables (arity = 0)
    per_arity.resize(1);
    for( unsigned i = 0; i < x_dim; ++i )
-      per_arity[0].push_back( PackAlelo( 0, GPT_VAR, (cl_uint)i ) );
+      per_arity[0].push_back( PackNode( 0, GPT_VAR, (cl_uint)i ) );
 
    // Adding user given primitives (functions and terminals)
    std::stringstream ss( primitives ); std::string token;
    while( std::getline( ss, token, ',' ) )
    {
-      // gene.first -> arity, gene.second -> type
-      std::pair<cl_uint, cl_uint> gene = Find( token );
-      if( gene.first >= per_arity.size() ) per_arity.resize( gene.first + 1 );
-      per_arity[gene.first].push_back( PackAlelo( gene.first, gene.second ) );
+      // node.first -> arity, node.second -> type
+      std::pair<cl_uint, cl_uint> node = Find( token );
+      if( node.first >= per_arity.size() ) per_arity.resize( node.first + 1 );
+      per_arity[node.first].push_back( PackNode( node.first, node.second ) );
    }
 
    // --------------- Consistence check
@@ -131,14 +131,14 @@ void Primitives::Load( unsigned x_dim, unsigned max_gen_size, const std::string&
       type of operator, we resort to a fake one-argument function called "identity".
       This function, as one can guess, just returns the value of its operator.
     */
-      if( per_arity[1].empty() ) per_arity[1].push_back( PackAlelo( 1, GPF_IDENTITY ) );
+      if( per_arity[1].empty() ) per_arity[1].push_back( PackNode( 1, GPF_IDENTITY ) );
    }
    else if( per_arity.size() == 1 && max_gen_size > 1 )
    {
    /*
       The only case where we can allow not having a primitive operator is when
-      the maximum genome size is equal to 1, so any terminal can serve any
-      genome.
+      the maximum program size is equal to 1, so any terminal can serve any
+      program.
     */
       throw Error( "You should enter at least an operator (function)." );
    }
@@ -183,25 +183,25 @@ void Primitives::Load( unsigned x_dim, unsigned max_gen_size, const std::string&
 }
 
 // -----------------------------------------------------------------------------
-cl_uint Primitives::RandomGene( unsigned min, unsigned max ) const
+cl_uint Primitives::RandomNode( unsigned min, unsigned max ) const
 {
    // TODO: if min == max == 1 and the user didn't give a function requiring
    // one argument, then return GPF_IDENTITY. (what about removing GPF_IDENTITY
    // from DB? We need, however, to ensure that the interpreter will handle it
-   // Plus print it correctly (see PrintGenome)
+   // Plus print it correctly (see PrintProgram)
 
    // Truncate to m_max_arity if necessary
    max = std::min( m_max_arity, max );
 
-   cl_uint gene = m_primitives[Random::Int( m_primitives_boundaries[min].first, 
+   cl_uint node = m_primitives[Random::Int( m_primitives_boundaries[min].first, 
                                             m_primitives_boundaries[max].second )];
 
    // Handle the ephemeral constants because they need to get a random value on-the-fly
-   if( INDEX( gene ) == GPT_EPHEMERAL )
-      gene = PackAlelo( 0, GPT_EPHEMERAL, (float) Random::Real( 0.0, SCALE_FACTOR ) );
+   if( INDEX( node ) == GPT_EPHEMERAL )
+      node = PackNode( 0, GPT_EPHEMERAL, (float) Random::Real( 0.0, SCALE_FACTOR ) );
 
-   // The returned cl_uint is a packed gene
-   return gene;
+   // The returned cl_uint is a packed node
+   return node;
 }
 
 // -----------------------------------------------------------------------------

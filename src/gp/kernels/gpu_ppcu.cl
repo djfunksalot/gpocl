@@ -1,22 +1,22 @@
-__kernel void evaluate( __global const uint* pop, __global const float* X, __global float* pred_Y, __local uint* genome )
+__kernel void evaluate( __global const uint* pop, __global const float* X, __global float* pred_Y, __local uint* program )
 {
-   __local unsigned int genome_size;
-   CREATE_STACK( float, MAX_GENOME_SIZE );
+   __local unsigned int program_size;
+   CREATE_STACK( float, MAX_TREE_SIZE );
 
    uint i_id = get_local_id( 0 );
    uint g_id = get_group_id( 0 );
    uint wg_size = get_local_size( 0 );
 
-   // Get the actual genome's size
-   if( i_id == 0 ) genome_size = pop[(MAX_GENOME_SIZE + 1) * g_id];
+   // Get the actual program's size
+   if( i_id == 0 ) program_size = pop[(MAX_TREE_SIZE + 1) * g_id];
 
    barrier(CLK_LOCAL_MEM_FENCE);
 
-   // FIXME: manage cases where genome_size > work_group_size (each work-item
+   // FIXME: manage cases where program_size > work_group_size (each work-item
    // will need to handle more than one index.
    // TODO: Check whether or not *all* work-items for this group are complete
    // when the code reaches the barrier bellow.
-   if( i_id < genome_size ) genome[i_id] = pop[(MAX_GENOME_SIZE + 1) * g_id + i_id + 1];
+   if( i_id < program_size ) program[i_id] = pop[(MAX_TREE_SIZE + 1) * g_id + i_id + 1];
 
    barrier(CLK_LOCAL_MEM_FENCE);
 
@@ -29,12 +29,12 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
       // -------------------------------
       // Calls the interpreter (C macro)
       // -------------------------------
-      for( int op = genome_size; op-- ; )
-         switch( INDEX( genome[op] ) )
+      for( int op = program_size; op-- ; )
+         switch( INDEX( program[op] ) )
          {
             INTERPRETER_CORE
             default:
-               PUSH( 0, X[iter * wg_size + NUM_POINTS * AS_INT( genome[op] ) + i_id] );
+               PUSH( 0, X[iter * wg_size + NUM_POINTS * AS_INT( program[op] ) + i_id] );
          }
 
       // -------------------------------

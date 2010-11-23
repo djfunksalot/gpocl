@@ -75,7 +75,7 @@ public:
 public:
 
    void ShowAvailablePrimitives() const { /* TODO */ }
-   cl_uint RandomGene( unsigned min, unsigned max ) const;
+   cl_uint RandomNode( unsigned min, unsigned max ) const;
    void Load( unsigned, unsigned, const std::string& );
 
 private:
@@ -91,7 +91,7 @@ private:
 
 private:
    // --------------
-   cl_uint PackAlelo( cl_uint arity, cl_uint type ) const {
+   cl_uint PackNode( cl_uint arity, cl_uint type ) const {
       assert( sizeof(cl_uint) == 4 );
 
       // checking bounds
@@ -101,18 +101,18 @@ private:
       return (arity << 29) | (type << 22);
       //  return PACKALELO( arity, type );
    }
-   cl_uint PackAlelo( cl_uint arity, cl_uint type, cl_uint index ) const {
+   cl_uint PackNode( cl_uint arity, cl_uint type, cl_uint index ) const {
       // checking bounds
       assert( ! (index & 0xFFC00000) ); // 0xFFC00000 = 11111111 11000000 00000000 00000000
 
-      return PackAlelo( arity, type ) | index;
+      return PackNode( arity, type ) | index;
    }
-   cl_uint PackAlelo( cl_uint arity, cl_uint type, cl_float value ) const {
+   cl_uint PackNode( cl_uint arity, cl_uint type, cl_float value ) const {
       unsigned packed_value = util::RndPosNum<unsigned>( value * COMPACT_RANGE / 1024 );
       // Checking bounds, i.e. can packed_value fit in 22 bits?)
       assert( ! (packed_value & 0xFFC00000) ); // 0xFFC00000 = 11111111 11000000 00000000 00000000
 
-      return PackAlelo( arity, type ) | packed_value;
+      return PackNode( arity, type ) | packed_value;
    }
    // --------------
 };

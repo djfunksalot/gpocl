@@ -68,7 +68,7 @@ Params::ShowUsage( const char* app = "gpocl" ) const // -h or --help
    << "Genetic Programming options:\n"
    << "  -p <p1,...,pn> --primitives <p1,...,pn>\n"
    << "     GP primitives (operators/operands) [default = +,-,*,/]\n"
-   << "  -ng <n>, --number-of-generations <n>\n"
+   << "  -g <n>, --generations <n>\n"
    << "     number of generations, n>0 [default = 1]\n"
    << "  -s <n>, --seed <n>\n"
    << "     GP initialization seed, n>=0 [default = 1]; 0 = random\n"
@@ -84,8 +84,8 @@ Params::ShowUsage( const char* app = "gpocl" ) const // -h or --help
    << "     selection pressure (tournament size), 2<=n<pop_size [default = 2]\n"
    << "  -es <n>, --elitism-size <n>\n"
    << "     elitism size [default = 1]\n"
-   << "  -mgs <n>, --maximum-genome-size <n>\n"
-   << "     maximum genome size [default = 20]\n";
+   << "  -ms <n>, --maximum-size <n>\n"
+   << "     maximum program size [default = 20]\n";
 }
 
 //----------------------------------------------------------------------
@@ -114,7 +114,7 @@ Params::Initialize()
    Opts.String.Add( "-gpu", "--gpu", "ppcu", "fpi", "fpc", "ppcu", "ppce", NULL );
 
    // Termination criteria
-   Opts.Int.Add( "-ng", "--number-of-generations", 1, 1, numeric_limits<int>::max() );
+   Opts.Int.Add( "-g", "--generations", 1, 1, numeric_limits<int>::max() );
 
    // Seed options
    Opts.Bool.Add( "-rs", "--random-seed" );
@@ -125,7 +125,7 @@ Params::Initialize()
    Opts.Float.Add( "-mp", "--mutation-probability", 0.05, 0.0, 1.0 );
    Opts.Int.Add( "-sp", "--seletion-pressure", 2, 2, numeric_limits<int>::max() );
    Opts.Int.Add( "-es", "--elitism-size", 1, 0, numeric_limits<int>::max() );
-   Opts.Int.Add( "-mgs", "--maximum-genome-size", 20, 1, numeric_limits<int>::max() );
+   Opts.Int.Add( "-ms", "--maximum-size", 20, 1, numeric_limits<int>::max() );
 
    // -- Get the options! ----------------
    /* Right now, the 'Opts' object will process the command-line, i.e.,
@@ -181,7 +181,7 @@ Params::Initialize()
    m_primitives = Opts.String.Get( "-p" );
    //m_terminal_set = Opts.String.Get( "-ts" );
 
-   m_number_of_generations = Opts.Int.Get( "-ng" );
+   m_number_of_generations = Opts.Int.Get( "-g" );
 
    // -- Initialization seed
    if( Opts.Bool.Get( "-rs" ) ) 
@@ -194,7 +194,7 @@ Params::Initialize()
    m_mutation_probability = Opts.Float.Get( "-mp" );
    m_selection_pressure = Opts.Int.Get( "-sp" );
    m_elitism_size = Opts.Int.Get( "-es" );
-   m_maximum_genome_size = Opts.Int.Get( "-mgs" );
+   m_maximum_tree_size = Opts.Int.Get( "-ms" );
 
    // -- Selection pressure (currently "tournament size")
    m_selection_pressure = Opts.Int.Get( "-sp" );

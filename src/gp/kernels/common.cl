@@ -1,6 +1,6 @@
 /*
    
-   Structure of a genome (individual)
+   Structure of a program (individual)
 
      |                         |
 +----+-----+----+--------------+-------------

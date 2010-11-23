@@ -46,6 +46,20 @@
 #include <vector>
 #include <cassert>
 
+/*
+Definitions:
+   Node: an individual cl_uint packing three elements: 
+        (1) arity, (2) index, and possibly (3) a value.
+   Tree: a set of nodes representing a complete (sub)tree.
+   Program: the size of a tree and the tree itself
+
+   Example:
+
+   {|   3    || 2, +,  | 0, var, X0 | 0, var, X1 |}
+    |_ size _|         |_ 2nd node _|
+              |___________ tree _________________|
+    |________________ program ___________________|
+*/
 
 /*
    When MAPPING is defined the output values (predictions) from the kernel
@@ -84,7 +98,7 @@ public:
 #ifndef MAPPING
       if( m_predicted_Y ) delete[] m_predicted_Y;
 #endif
-      delete[] m_best_genome;
+      delete[] m_best_program;
    }
 
 
@@ -94,7 +108,7 @@ public:
       LoadPoints();
 
       // Load primitives
-      m_primitives.Load( m_x_dim, m_params->m_maximum_genome_size, m_params->m_primitives );
+      m_primitives.Load( m_x_dim, m_params->m_maximum_tree_size, m_params->m_primitives );
 
       // Create context/devices (CPU != GPU)
       // Create queue
@@ -117,59 +131,80 @@ public:
 protected:
    virtual void Evolve();
 
+   unsigned MaximumProgramSize() const { return m_params->m_maximum_tree_size + 1; }
+   unsigned MaximumTreeSize() const { return m_params->m_maximum_tree_size; }
    /**
-     Return the size of genome pointed by 'g'. The size of
-     a genome is stored at its first position.
+     Return the size of program pointed by 'g'. The size of
+     a program is stored at its first position.
     */
-   unsigned GenomeSize( const cl_uint* g ) const { return *g; };
-   unsigned GenomeSize( const cl_uint* p, unsigned i ) const { 
-      return GenomeSize( Genome( p, i ) );
+   unsigned ProgramSize( const cl_uint* program ) const { return *program; };
+   unsigned ProgramSize( const cl_uint* pop, unsigned i ) const 
+   { 
+      return ProgramSize( Program( pop, i ) );
    }
    /**
-     Return the i-th genome of population 'p'
+     Return the i-th program of population 'p'
      */
-   cl_uint* Genome( cl_uint* p, unsigned i ) const {
-      return p + (i * (m_params->m_maximum_genome_size + 1) ); 
+   cl_uint* Program( cl_uint* pop, unsigned i ) const 
+   {
+      return pop + (i * (m_params->m_maximum_tree_size + 1) ); 
+   }
+   /**
+     Return the i-th tree of population 'p'
+     */
+   cl_uint* Tree( cl_uint* pop, unsigned i ) const 
+   {
+      return Program( pop, i ) + 1; 
    }
 
    /**
-     Return the i-th genome of population 'p' (const version)
+     Return the i-th program of population 'p' (const version)
      */
-   const cl_uint* Genome( const cl_uint* p, unsigned i ) const {
-      return p + (i * (m_params->m_maximum_genome_size + 1) ); 
+   const cl_uint* Program( const cl_uint* pop, unsigned i ) const 
+   {
+      return pop + (i * (m_params->m_maximum_tree_size + 1) ); 
+   }
+   /**
+     Return the i-th tree of population 'p' (const version)
+     */
+   const cl_uint* Tree( const cl_uint* pop, unsigned i ) const 
+   {
+      return Program( pop, i ) + 1; 
    }
 
 
-   void EvaluatePopulation( cl_uint* pop, cl_float* fitness );
+   void EvaluatePopulation( cl_uint* pop, cl_float* errors );
    void InitializePopulation( cl_uint* pop );
    void Breed( cl_uint* old_pop, cl_uint* new_pop );
-   void Clone( cl_uint* genome_orig, cl_uint* genome_dest ) const;
+   void Clone( cl_uint* program_orig, cl_uint* program_dest ) const;
    /**
-     Copy the individual @ref genome_orig into @ref genome_dest but
+     Copy the individual @ref program_orig into @ref program_dest but
      with a random subtree mutated--a random subtree of same size is
-     created and put in @ref genome_dest replacing the corresponding
-     subtree in @ref genome_orig.
+     created and put in @ref program_dest replacing the corresponding
+     subtree in @ref program_orig.
     */
-   void CopySubTreeMutate( const cl_uint* genome_orig, cl_uint* genome_dest ) const;
+   void CopySubTreeMutate( const cl_uint* program_orig, cl_uint* program_dest ) const;
    /**
-     Copy the individual @ref genome_orig into @ref genome_dest but
-     with a random gene (node) mutated.
+     Copy the individual @ref program_orig into @ref program_dest but
+     with a random node mutated.
     */
-   void CopyGeneMutate( const cl_uint* genome_orig, cl_uint* genome_dest ) const;
+   void CopyNodeMutate( const cl_uint* program_orig, cl_uint* program_dest ) const;
 
    /**
-     Create a linear tree starting at genome of a given size (exactly).
+     Create a linear tree of the exactly given size, starting at 'node'.
      */
-   void CreateLinearTree( cl_uint* genome, unsigned size ) const;
+   void CreateLinearTree( cl_uint* node, unsigned size ) const;
 
-   void PrintGenome( const cl_uint* genome ) const;
-   unsigned TreeSize( const cl_uint* tree ) const
+   void PrintProgram( const cl_uint* program ) const;
+   void PrintTree( const cl_uint* node ) const;
+
+   unsigned TreeSize( const cl_uint* node ) const
    {
       /* We have a valid tree when the sum of the arity minus one equals to -1 */
       unsigned size = 0; int sum = 0;
       do {
          ++size;
-         sum += ARITY( *tree++ ) - 1;
+         sum += ARITY( *node++ ) - 1;
       } while( sum != -1 );
 
       return size;
@@ -177,8 +212,8 @@ protected:
 
    virtual void LoadPoints() = 0;
 
-   cl_uint* m_best_genome;
-   cl_float m_best_fitness;
+   cl_uint* m_best_program;
+   cl_float m_best_error;
 
    Primitives m_primitives;
 protected:
@@ -275,7 +310,7 @@ public:
       m_num_global_wi = m_num_local_wi * m_params->m_population_size;
 
       // FIXME: Remove these restrictions! (need to change the kernel)
-      assert( m_params->m_maximum_genome_size <= m_num_local_wi );
+      assert( m_params->m_maximum_tree_size <= m_num_local_wi );
       assert( m_num_points % m_num_local_wi == 0 );
    }
 
