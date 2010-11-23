@@ -308,10 +308,11 @@ bool GP::EvaluatePopulation( cl_uint* pop, cl_float* errors )
 
       for( unsigned j = 0; j < m_num_points; ++j )
       {
-      // sum of the squared error
+         // Sum of the squared error
          errors[i] += std::pow( m_predicted_Y[i * m_num_points + j] - m_Y[j], 2 );
         // errors[i] += std::abs( m_predicted_Y[i * m_num_points + j] - m_Y[j] );
       }
+
 
       // If isnan then something went wrong
       assert( !isnan( errors[i] ) );
@@ -322,7 +323,8 @@ bool GP::EvaluatePopulation( cl_uint* pop, cl_float* errors )
          errors[i] = std::numeric_limits<cl_float>::max();
 
          continue;
-      }
+      } else
+         errors[i] /= m_num_points; // take the mean
 
 
       // Check whether we have found a better solution
