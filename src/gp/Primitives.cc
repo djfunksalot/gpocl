@@ -73,7 +73,7 @@ void Primitives::Load( unsigned x_dim, unsigned max_gen_size, const std::string&
    Register( 2, "or",           "||",           "ARG(0) || ARG(1)" );
 
    // FIXME: ! not working
-   Register( 1, "not",          "!",            "!ARG(0)" );
+   Register( 1, "not",          "!",            "!(int)ARG(0)" );
    Register( 1, "neg",          "neg",          "-ARG(0)" );
    Register( 1, "sqrt",         "sqrt",         "(ARG(0) < 0.0f ? 1.0f : sqrt(ARG(0)))" );
    Register( 1, "^2",           "^2",           "ARG(0) * ARG(0)" );
