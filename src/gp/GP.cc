@@ -159,8 +159,7 @@ void GP::Breed( cl_uint* old_pop, cl_uint* new_pop, const cl_float* errors )
          unsigned competitor = Random::Int( 0, m_params->m_population_size - 1 );
          // TODO: Take into account the size
          if( errors[competitor] < errors[winner] 
-             //|| ( errors[competitor] == errors[winner] &&  // TODO: use the threshold here!
-             || ( util::AlmostEqual( errors[competitor], errors[winner], m_params->m_error_tolerance ) &&
+             || ( errors[competitor] == errors[winner] &&
                ProgramSize( old_pop + competitor ) < ProgramSize( old_pop + winner ) ) )
          {
            winner = competitor;
@@ -318,8 +317,7 @@ bool GP::EvaluatePopulation( cl_uint* pop, cl_float* errors )
 
       // Check whether we have found a better solution
       if( errors[i] < m_best_error  ||
-         //(errors[i] == m_best_error && ProgramSize( pop, i ) < ProgramSize( m_best_program ) ) )
-         (util::AlmostEqual( errors[i], m_best_error, m_params->m_error_tolerance ) && ProgramSize( pop, i ) < ProgramSize( m_best_program ) ) )
+         (errors[i] == m_best_error && ProgramSize( pop, i ) < ProgramSize( m_best_program ) ) )
       {
          m_best_error = errors[i];
          Clone( Program( pop, i ), m_best_program );
