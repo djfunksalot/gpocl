@@ -85,7 +85,9 @@ Params::ShowUsage( const char* app = "gpocl" ) const // -h or --help
    << "  -es <n>, --elitism-size <n>\n"
    << "     elitism size [default = 1]\n"
    << "  -ms <n>, --maximum-size <n>\n"
-   << "     maximum program size [default = 20]\n";
+   << "     maximum program size [default = 20]\n"
+   << "  -et <n>, --error-tolerance <f>\n"
+   << "     tolerance of error (stop criterion) [default = 0.001]\n";
 }
 
 //----------------------------------------------------------------------
@@ -127,6 +129,7 @@ Params::Initialize()
    Opts.Int.Add( "-es", "--elitism-size", 1, 0, numeric_limits<int>::max() );
    Opts.Int.Add( "-ms", "--maximum-size", 20, 1, numeric_limits<int>::max() );
 
+   Opts.Float.Add( "-et", "--error-tolerance", 0.001, 0.0 );
    // -- Get the options! ----------------
    /* Right now, the 'Opts' object will process the command-line, i.e.,
     * it will try to recognize the options and their respective arguments. */
@@ -200,6 +203,7 @@ Params::Initialize()
    m_selection_pressure = Opts.Int.Get( "-sp" );
    if( m_selection_pressure >= m_population_size ) m_selection_pressure = 2;
                                               
+   m_error_tolerance = Opts.Float.Get( "-et" );
 
    m_output_file = Opts.String.Get( "-o" );
 

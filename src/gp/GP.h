@@ -174,9 +174,9 @@ protected:
 
    void SetProgramSize( cl_uint* program, unsigned size ) const { *program = size; }
 
-   void EvaluatePopulation( cl_uint* pop, cl_float* errors );
+   bool EvaluatePopulation( cl_uint* pop, cl_float* errors );
    void InitializePopulation( cl_uint* pop );
-   void Breed( cl_uint* old_pop, cl_uint* new_pop );
+   void Breed( cl_uint* old_pop, cl_uint* new_pop, const cl_float* );
    void Clone( cl_uint* program_orig, cl_uint* program_dest ) const;
    /**
      Copy the individual @ref program_orig into @ref program_dest but
@@ -254,7 +254,7 @@ protected:
     put in the given argument (matrix). */
    void LoadPoints( std::vector<std::vector<cl_float> > & );
 
-   virtual void EvaluatePop() {};
+   //virtual void EvaluatePop() {};
    unsigned m_tournament_size; /**< Tournament size. */
 
 

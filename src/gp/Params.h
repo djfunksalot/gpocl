@@ -93,6 +93,7 @@ public:
    int m_maximum_tree_size; /**< The maximum allowed size for a program. */
    float m_crossover_probability; /**< Crossover probability */
    float m_mutation_probability; /**< Mutation probability */
+   float m_error_tolerance; /**< Error tolerance (stop criterion) */
 
    std::string m_output_file; /**< output filename. */
 

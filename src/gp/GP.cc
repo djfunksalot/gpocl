@@ -120,9 +120,9 @@ void GP::Evolve()
    {
       std::cout << "Evolving generation " << gen << "... ";
       // 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16:
-      Breed( cur_pop, tmp_pop );
+      Breed( cur_pop, tmp_pop, errors );
       // 17:
-      EvaluatePopulation( tmp_pop, errors );
+      if( EvaluatePopulation( tmp_pop, errors ) ) break;
       std::cout << "done.\n";
 
       // 18:
@@ -141,7 +141,7 @@ void GP::Evolve()
 }
 
 // -----------------------------------------------------------------------------
-void GP::Breed( cl_uint* old_pop, cl_uint* new_pop )
+void GP::Breed( cl_uint* old_pop, cl_uint* new_pop, const cl_float* errors )
 {
    // Elitism
    for( unsigned i = 0; i < m_params->m_elitism_size; ++i )
@@ -150,16 +150,29 @@ void GP::Breed( cl_uint* old_pop, cl_uint* new_pop )
       Clone( m_best_program, Program( new_pop, i ) );
    }
 
-   // Genetic operations
-   // FIXME:
+   // Tournament:
    for( unsigned i = m_params->m_elitism_size; i < m_params->m_population_size; ++i )
    {
-      //CopySubTreeMutate( Program( old_pop, i ), Program( new_pop, i ) );
-      CopySubTreeMutate( m_best_program, Program( new_pop, i ) );
+      unsigned winner = Random::Int( 0, m_params->m_population_size - 1 );
+      for( unsigned t = 0; t < m_params->m_selection_pressure; ++t ) 
+      {
+         unsigned competitor = Random::Int( 0, m_params->m_population_size - 1 );
+         // TODO: Take into account the size
+         if( errors[competitor] < errors[winner] 
+             //|| ( errors[competitor] == errors[winner] &&  // TODO: use the threshold here!
+             || ( util::AlmostEqual( errors[competitor], errors[winner], m_params->m_error_tolerance ) &&
+               ProgramSize( old_pop + competitor ) < ProgramSize( old_pop + winner ) ) )
+         {
+           winner = competitor;
+         }
+      }
+
+   // Genetic operations
+   // FIXME:
+      CopySubTreeMutate( Program( old_pop, winner ), Program( new_pop, i ) );
 #ifndef NDEBUG
       std::cout << std::endl;
       PrintProgram( Program( old_pop, i ) );
-     // PrintProgram( Program( new_pop, 0 ) );
       std::cout << std::endl;
       PrintProgram( Program( new_pop, i ) );
       std::cout << std::endl;
@@ -255,7 +268,7 @@ void GP::Clone( cl_uint* program_orig, cl_uint* program_dest ) const
 }
 
 // -----------------------------------------------------------------------------
-void GP::EvaluatePopulation( cl_uint* pop, cl_float* errors )
+bool GP::EvaluatePopulation( cl_uint* pop, cl_float* errors )
 {
    // Write data to buffer (TODO: can we use mapbuffer here?)
    /* 
@@ -305,7 +318,8 @@ void GP::EvaluatePopulation( cl_uint* pop, cl_float* errors )
 
       // Check whether we have found a better solution
       if( errors[i] < m_best_error  ||
-         (errors[i] == m_best_error && ProgramSize( pop, i ) < ProgramSize( m_best_program ) ) )
+         //(errors[i] == m_best_error && ProgramSize( pop, i ) < ProgramSize( m_best_program ) ) )
+         (util::AlmostEqual( errors[i], m_best_error, m_params->m_error_tolerance ) && ProgramSize( pop, i ) < ProgramSize( m_best_program ) ) )
       {
          m_best_error = errors[i];
          Clone( Program( pop, i ), m_best_program );
@@ -328,6 +342,9 @@ void GP::EvaluatePopulation( cl_uint* pop, cl_float* errors )
 #ifdef MAPPING
    m_queue.enqueueUnmapMemObject( m_buf_predicted_Y, m_predicted_Y );
 #endif
+
+   // We should stop the evolution if an error below the specified tolerance is found
+   return (m_best_error <= m_params->m_error_tolerance);
    
 }
 
