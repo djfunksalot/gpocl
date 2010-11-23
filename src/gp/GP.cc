@@ -32,6 +32,7 @@
 #include <cstdlib>
 #include <algorithm>
 #include <cassert>
+#include <limits>
 
 Params* GP::m_params = 0;
 
@@ -41,7 +42,8 @@ GP::GP( Params& p, cl_device_type device_type ): m_device_type( device_type ),
                                                  m_predicted_Y( 0 ),
                                                  m_num_points( 0 ),
                                                  m_y_dim( 1 ), 
-                                                 m_x_dim( 0 )
+                                                 m_x_dim( 0 ),
+                                                 m_best_fitness( std::numeric_limits<cl_float>::max() )
 {
    m_params = &p;
 
@@ -59,6 +61,11 @@ GP::GP( Params& p, cl_device_type device_type ): m_device_type( device_type ),
          m_params->m_population_size : 
          m_params->m_selection_pressure;
    }
+
+   // Create room for the best individual so far
+   m_best_genome = new cl_uint[m_params->m_maximum_genome_size + 1];
+   // Set its size as zero
+   m_best_genome[0] = 0;
 }
 
 // -----------------------------------------------------------------------------
@@ -109,7 +116,7 @@ void GP::Evolve()
    std::cout << "done.\n";
 
    // 3:
-   for( unsigned gen = 1; gen < m_params->m_number_of_generations; ++gen )
+   for( unsigned gen = 2; gen <= m_params->m_number_of_generations; ++gen )
    {
       std::cout << "Evolving generation " << gen << "... ";
       // 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16:
@@ -135,8 +142,7 @@ void GP::Breed( cl_uint* old_pop, cl_uint* new_pop )
    for( unsigned i = 0; i < m_params->m_elitism_size; ++i )
    {
       // FIXME: (use the vector of best individuals)
-      Clone( &old_pop[i * (m_params->m_maximum_genome_size + 1)],
-             &new_pop[i * (m_params->m_maximum_genome_size + 1)] );
+      Clone( Genome( old_pop, i ), Genome( new_pop, i ) );
 
       // TODO: remove:
       //PrintGenome( &new_pop[i * (m_params->m_maximum_genome_size + 1)] );
@@ -146,8 +152,7 @@ void GP::Breed( cl_uint* old_pop, cl_uint* new_pop )
    // FIXME:
    for( unsigned i = 0; i < m_params->m_population_size; ++i )
    {
-      CopySubTreeMutate( &old_pop[i * (m_params->m_maximum_genome_size + 1)],
-                      &new_pop[i * (m_params->m_maximum_genome_size + 1)] );
+      CopySubTreeMutate( Genome( old_pop, i ), Genome( new_pop, i ) );
 #ifndef NDEBUG
       std::cout << std::endl;
       PrintGenome( &old_pop[i * (m_params->m_maximum_genome_size + 1)] );
@@ -281,6 +286,19 @@ void GP::EvaluatePopulation( cl_uint* pop, cl_float* fitness )
         // fitness[i] += std::pow( m_predicted_Y[i * m_num_points + j] - m_Y[j], 2 );
          fitness[i] += std::abs( m_predicted_Y[i * m_num_points + j] - m_Y[j] );
       }
+
+      // Check whether we have found a better solution
+      if( fitness[i] < m_best_fitness  ||
+         (fitness[i] == m_best_fitness && GenomeSize( pop, i ) < GenomeSize( m_best_genome ) ) )
+      {
+         m_best_fitness = fitness[i];
+         Clone( Genome( pop, i ), m_best_genome );
+
+         std::cout << "\nBest so far: ";
+         PrintGenome( m_best_genome );
+         std::cout << " (error: " << m_best_fitness << ")\n";
+      }
+
     //  std::cout << "]";
 
       /*

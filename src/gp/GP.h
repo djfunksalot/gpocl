@@ -84,6 +84,7 @@ public:
 #ifndef MAPPING
       if( m_predicted_Y ) delete[] m_predicted_Y;
 #endif
+      delete[] m_best_genome;
    }
 
 
@@ -116,6 +117,29 @@ public:
 protected:
    virtual void Evolve();
 
+   /**
+     Return the size of genome pointed by 'g'. The size of
+     a genome is stored at its first position.
+    */
+   unsigned GenomeSize( const cl_uint* g ) const { return *g; };
+   unsigned GenomeSize( const cl_uint* p, unsigned i ) const { 
+      return GenomeSize( Genome( p, i ) );
+   }
+   /**
+     Return the i-th genome of population 'p'
+     */
+   cl_uint* Genome( cl_uint* p, unsigned i ) const {
+      return p + (i * (m_params->m_maximum_genome_size + 1) ); 
+   }
+
+   /**
+     Return the i-th genome of population 'p' (const version)
+     */
+   const cl_uint* Genome( const cl_uint* p, unsigned i ) const {
+      return p + (i * (m_params->m_maximum_genome_size + 1) ); 
+   }
+
+
    void EvaluatePopulation( cl_uint* pop, cl_float* fitness );
    void InitializePopulation( cl_uint* pop );
    void Breed( cl_uint* old_pop, cl_uint* new_pop );
@@ -132,7 +156,11 @@ protected:
      with a random gene (node) mutated.
     */
    void CopyGeneMutate( const cl_uint* genome_orig, cl_uint* genome_dest ) const;
-   void CreateLinearTree( cl_uint* genome, unsigned left ) const;
+
+   /**
+     Create a linear tree starting at genome of a given size (exactly).
+     */
+   void CreateLinearTree( cl_uint* genome, unsigned size ) const;
 
    void PrintGenome( const cl_uint* genome ) const;
    unsigned TreeSize( const cl_uint* tree ) const
@@ -148,6 +176,9 @@ protected:
    }
 
    virtual void LoadPoints() = 0;
+
+   cl_uint* m_best_genome;
+   cl_float m_best_fitness;
 
    Primitives m_primitives;
 protected:
