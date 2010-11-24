@@ -130,9 +130,9 @@ void GP::Evolve()
    } // 19
 
    // 20:
-   std::cout << "\nBest program found: ";
+   std::cout << "Best program found: [" << m_best_error << "] ";
    PrintProgram( m_best_program );
-   std::cout << " (error: " << m_best_error << ")\n";
+   std::cout << " (size: " << ProgramSize( m_best_program ) << ")\n";
 
    // Clean up
    delete[] pop_a;
@@ -443,9 +443,9 @@ bool GP::EvaluatePopulation( cl_uint* pop, cl_float* errors )
 
 
       // If isnan then something went wrong
-      assert( !isnan( errors[i] ) );
+      //assert( !isnan( errors[i] ) );
 
-      if( isinf( errors[i] ) )
+      if( isinf( errors[i] ) || isnan( errors[i] ) )
       {
          // Set the worst error possible
          errors[i] = std::numeric_limits<cl_float>::max();
@@ -594,10 +594,9 @@ void GP::BuildKernel()
       "#define NODE program[op]\n"
       + interpreter + m_kernel_src;
 
-   // FIXME:
-   std::cerr << std::endl;
-   std::cerr << program_src;
-   std::cerr << std::endl;
+  // std::cerr << std::endl;
+   //std::cerr << program_src;
+  // std::cerr << std::endl;
 
    //--------------------
 

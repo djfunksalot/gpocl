@@ -87,7 +87,7 @@ Params::ShowUsage( const char* app = "gpocl" ) const // -h or --help
    << "  -ms <n>, --maximum-size <n>\n"
    << "     maximum program size [default = 20]\n"
    << "  -et <n>, --error-tolerance <f>\n"
-   << "     tolerance of error (stop criterion) [default = 0.001]\n";
+   << "     tolerance of error (stop criterion) [default = none]\n";
 }
 
 //----------------------------------------------------------------------
@@ -129,7 +129,7 @@ Params::Initialize()
    Opts.Int.Add( "-es", "--elitism-size", 1, 0, numeric_limits<int>::max() );
    Opts.Int.Add( "-ms", "--maximum-size", 20, 1, numeric_limits<int>::max() );
 
-   Opts.Float.Add( "-et", "--error-tolerance", 0.001, 0.0 );
+   Opts.Float.Add( "-et", "--error-tolerance", -1.0, 0.0 );
    // -- Get the options! ----------------
    /* Right now, the 'Opts' object will process the command-line, i.e.,
     * it will try to recognize the options and their respective arguments. */
