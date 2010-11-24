@@ -153,22 +153,19 @@ void GP::Breed( cl_uint* old_pop, cl_uint* new_pop, const cl_float* errors )
    // Tournament:
    for( unsigned i = m_params->m_elitism_size; i < m_params->m_population_size; ++i )
    {
-      unsigned winner = Random::Int( 0, m_params->m_population_size - 1 );
-      for( unsigned t = 0; t < m_params->m_selection_pressure; ++t ) 
-      {
-         unsigned competitor = Random::Int( 0, m_params->m_population_size - 1 );
-         // TODO: Take into account the size
-         if( errors[competitor] < errors[winner] 
-             || ( errors[competitor] == errors[winner] &&
-               ProgramSize( old_pop + competitor ) < ProgramSize( old_pop + winner ) ) )
-         {
-           winner = competitor;
-         }
-      }
+      //unsigned sel = Tournament( old_pop, errors );
 
+      if( Random::Probability( m_params->m_crossover_probability ) )
+         // Respectively: mom, dad, and child
+         Crossover( Program( old_pop, Tournament( old_pop, errors ) ),
+                    Program( old_pop, Tournament( old_pop, errors ) ),
+                    Program( new_pop, i ) );
+      else
+         Clone( Program( old_pop, Tournament( old_pop, errors ) ), Program( new_pop, i ) );
+      //if( Random::Probability( m_params->m_mutation_probability ) )
    // Genetic operations
    // FIXME:
-      CopySubTreeMutate( Program( old_pop, winner ), Program( new_pop, i ) );
+      //CopySubTreeMutate( Program( old_pop, sel ), Program( new_pop, i ) );
 /*#ifndef NDEBUG
       std::cout << std::endl;
       PrintProgram( Program( old_pop, i ) );
@@ -177,6 +174,57 @@ void GP::Breed( cl_uint* old_pop, cl_uint* new_pop, const cl_float* errors )
       std::cout << std::endl;
 #endif*/
    }
+}
+
+void GP::Crossover( const cl_uint* mom, const cl_uint* dad, cl_uint* child ) const
+{
+   assert( mom != NULL && dad != NULL && child != NULL && child != mom && child != dad );
+
+   unsigned pt_mom;
+   unsigned pt_dad;
+   unsigned mom_subtree_size;
+   unsigned dad_subtree_size;
+   unsigned child_tree_size;
+   register unsigned i,j;
+
+   // Choose cut points (mom/dad) that don't go beyond the maximum tree size
+   do
+   {
+      pt_mom = Random::Int( 1, ProgramSize( mom ) );
+      pt_dad = Random::Int( 1, ProgramSize( dad ) );
+      mom_subtree_size = TreeSize( mom + pt_mom );
+      dad_subtree_size = TreeSize( dad + pt_dad );
+
+      SetProgramSize( child, (ProgramSize( mom ) - mom_subtree_size) + dad_subtree_size );
+   } while( ProgramSize( child ) > MaximumTreeSize() );
+
+   /*
+   std::cout << "\n\npt_mom: " << pt_mom << " pt_dad: " << pt_dad;
+   std::cout << "\nMom: "; PrintProgram( mom );
+   std::cout << "\nDad: "; PrintProgram( dad );
+   */
+   // Actual crossover
+   for( i = 1; i < pt_mom; i++ )
+   {
+      *(child + i) = *(mom + i);
+   }
+   for( j = pt_dad; j < pt_dad + dad_subtree_size; j++ )
+   {
+      *(child + i) = *(dad + j);
+
+      i++;
+   }
+   for( j = pt_mom + mom_subtree_size; j < ProgramSize( mom ) + 1; j++ )
+   {
+      *(child + i) = *(mom + j);
+
+      i++;
+   }
+  // std::cout << "\nSon: "; PrintProgram( child );
+
+   // FIXME:
+   if( TreeSize( child + 1 ) != ProgramSize( child ) )
+      throw Error( "Sizes don't match." );
 }
 
 // -----------------------------------------------------------------------------
@@ -348,6 +396,23 @@ bool GP::EvaluatePopulation( cl_uint* pop, cl_float* errors )
    // We should stop the evolution if an error below the specified tolerance is found
    return (m_best_error <= m_params->m_error_tolerance);
    
+}
+// -----------------------------------------------------------------------------
+unsigned GP::Tournament( const cl_uint* pop, const cl_float* errors ) const
+{
+   unsigned winner = Random::Int( 0, m_params->m_population_size - 1 );
+   for( unsigned t = 0; t < m_tournament_size; ++t ) 
+   {
+      unsigned competitor = Random::Int( 0, m_params->m_population_size - 1 );
+      if( errors[competitor] < errors[winner] 
+            || ( errors[competitor] == errors[winner] &&
+               ProgramSize( pop + competitor ) < ProgramSize( pop + winner ) ) )
+      {
+         winner = competitor;
+      }
+   }
+
+   return winner;
 }
 
 // -----------------------------------------------------------------------------

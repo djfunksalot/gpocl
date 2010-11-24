@@ -72,6 +72,9 @@ void Primitives::Load( unsigned x_dim, unsigned max_gen_size, const std::string&
    Register( 2, "and",          "&&",           "ARG(0) && ARG(1)" );
    Register( 2, "or",           "||",           "ARG(0) || ARG(1)" );
    Register( 2, "pow",          "^",            "pow(ARG(0), ARG(1))" );
+   Register( 2, "mean",         "mean",         "(ARG(0) + ARG(1))/2.0f" );
+   Register( 2, "min",          "min",         "min(ARG(0), ARG(1))" );
+   Register( 2, "max",          "max",         "max(ARG(0), ARG(1))" );
 
    Register( 1, "sin",          "sin",          "sin(ARG(0))" );
    Register( 1, "cos",          "cos",          "cos(ARG(0))" );

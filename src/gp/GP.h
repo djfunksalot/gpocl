@@ -178,6 +178,8 @@ protected:
    void InitializePopulation( cl_uint* pop );
    void Breed( cl_uint* old_pop, cl_uint* new_pop, const cl_float* );
    void Clone( cl_uint* program_orig, cl_uint* program_dest ) const;
+   unsigned Tournament( const cl_uint* pop, const cl_float* errors ) const;
+   void Crossover( const cl_uint* mom, const cl_uint* dad, cl_uint* child ) const;
    /**
      Copy the individual @ref program_orig into @ref program_dest but
      with a random subtree mutated--a random subtree of same size is
