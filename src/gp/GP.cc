@@ -134,7 +134,7 @@ void GP::Evolve()
    std::cout << " (size: " << ProgramSize( m_best_program ) << ")\n";
 
 #ifdef PROFILING
-   std::cout << "\n[Avg. KET: " << m_kernel_time / (m_kernel_calls * 1.0E9) << "s] [Avg. KLT: " << m_launch_time / (m_kernel_calls * 1.0E9) << "s] | [Acc. KET: " << m_kernel_time/1.0E+9 << "s] [Acc. KLT: " << m_launch_time/1.0E+9 << "s] | [Kernel calls: " << m_kernel_calls << "]\n";
+   std::cout << "\n[Avg. KET: " << m_kernel_time / (m_kernel_calls * 1.0E6) << "ms] [Avg. KLT: " << m_launch_time / (m_kernel_calls * 1.0E6) << "ms] | [Acc. KET: " << m_kernel_time/1.0E+9 << "s] [Acc. KLT: " << m_launch_time/1.0E+9 << "s] | [Kernel calls: " << m_kernel_calls << "]\n";
 #endif
    // Clean up
    delete[] pop_a;
@@ -155,7 +155,6 @@ void GP::Breed( cl_uint* old_pop, cl_uint* new_pop, const cl_float* errors )
    // Tournament:
    for( unsigned i = m_params->m_elitism_size; i < m_params->m_population_size; ++i )
    {
-
       // Genetic operations
       if( Random::Probability( m_params->m_crossover_probability ) )
          // Respectively: mom, dad, and child
@@ -190,6 +189,7 @@ void GP::Crossover( const cl_uint* mom, const cl_uint* dad, cl_uint* child ) con
    unsigned pt_dad;
    unsigned mom_subtree_size;
    unsigned dad_subtree_size;
+   unsigned child_program_size;
    register unsigned i,j;
 
    // Choose cut points (mom/dad) that don't go beyond the maximum tree size
@@ -200,8 +200,10 @@ void GP::Crossover( const cl_uint* mom, const cl_uint* dad, cl_uint* child ) con
       mom_subtree_size = TreeSize( mom + pt_mom );
       dad_subtree_size = TreeSize( dad + pt_dad );
 
-      SetProgramSize( child, (ProgramSize( mom ) - mom_subtree_size) + dad_subtree_size );
-   } while( ProgramSize( child ) > MaximumTreeSize() );
+      child_program_size = ProgramSize( mom ) - mom_subtree_size + dad_subtree_size;
+   } while( child_program_size > MaximumTreeSize() );
+
+   SetProgramSize( child, child_program_size );
 
    /*
    std::cout << "\n\npt_mom: " << pt_mom << " pt_dad: " << pt_dad;
@@ -227,9 +229,7 @@ void GP::Crossover( const cl_uint* mom, const cl_uint* dad, cl_uint* child ) con
    }
   // std::cout << "\nSon: "; PrintProgram( child );
 
-   // FIXME:
-   if( TreeSize( child + 1 ) != ProgramSize( child ) )
-      throw Error( "Sizes don't match." );
+   assert( TreeSize( child + 1 ) == ProgramSize( child ) );
 }
 
 // -----------------------------------------------------------------------------
@@ -308,20 +308,16 @@ void GP::NodeMutate( cl_uint* program ) const
                                                       ARITY( program[mutation_point] ) );
 }
 
-// -----------------------------------------------------------------------------
 void GP::CopySubTreeMutate( const cl_uint* program_orig, cl_uint* program_dest ) const
 {
 #define CAN_CHANGE_ORIGINAL_SIZE 1
 
-   // Copy the size (CopyNodeMutate, differently from CopySubTreeMutate doesn't
-   // change the actual size of the program)
    assert( program_orig != NULL && program_dest != NULL && program_orig != program_dest );
    assert( ProgramSize( program_orig ) <= MaximumTreeSize() );
 
-   unsigned size = *program_orig;
    // Pos 0 is the program size; pos 1 is the first node and 'program size + 1'
    // is the last node.
-   unsigned mutation_point = Random::Int( 1, size ); // [1, size] (inclusive)
+   unsigned mutation_point = Random::Int( 1, ProgramSize( program_orig ) ); // [1, size] (inclusive)
 
    //                   (mutation point)
    //                          v
@@ -341,10 +337,11 @@ void GP::CopySubTreeMutate( const cl_uint* program_orig, cl_uint* program_dest )
 #else
    unsigned new_subtree_size = subtree_size;
 #endif
+
    CreateLinearTree( &program_dest[mutation_point], new_subtree_size );
 
    // Continue to copy the second fragment
-   for( unsigned i = mutation_point + subtree_size; i < size + 1; ++i )
+   for( unsigned i = mutation_point + subtree_size; i < ProgramSize( program_orig ) + 1; ++i )
       program_dest[i + (new_subtree_size - subtree_size)] = program_orig[i];
 
    // Finally, set the resulting tree size to the newly generated program
@@ -478,7 +475,7 @@ bool GP::EvaluatePopulation( cl_uint* pop, cl_float* errors )
 
       // Check whether we have found a better solution
       if( errors[i] < m_best_error  ||
-         (errors[i] == m_best_error && ProgramSize( pop, i ) < ProgramSize( m_best_program ) ) )
+         ( util::AlmostEqual( errors[i], m_best_error ) && ProgramSize( pop, i ) < ProgramSize( m_best_program ) ) )
       {
          m_best_error = errors[i];
          Clone( Program( pop, i ), m_best_program );
@@ -505,9 +502,9 @@ unsigned GP::Tournament( const cl_uint* pop, const cl_float* errors ) const
    for( unsigned t = 0; t < m_tournament_size; ++t ) 
    {
       unsigned competitor = Random::Int( 0, m_params->m_population_size - 1 );
-      if( errors[competitor] < errors[winner] 
-            || ( errors[competitor] == errors[winner] &&
-               ProgramSize( pop + competitor ) < ProgramSize( pop + winner ) ) )
+      if( errors[competitor] < errors[winner]
+            || ( util::AlmostEqual( errors[competitor], errors[winner] ) &&
+               ProgramSize( pop, competitor ) < ProgramSize( pop, winner ) ) )
       {
          winner = competitor;
       }
@@ -741,7 +738,7 @@ void GP::LoadKernel( const char* kernel_file )
 // -----------------------------------------------------------------------------
 void GP::InitializePopulation( cl_uint* pop )
 {
-   for( cl_uint i = 0; i < m_params->m_population_size; ++i )
+   for( unsigned i = 0; i < m_params->m_population_size; ++i )
    {
       // TODO: how about using a normal distribution (with mean = max_gen_size/2)?
       cl_uint tree_size = Random::Int( 1, MaximumTreeSize() );
@@ -749,7 +746,7 @@ void GP::InitializePopulation( cl_uint* pop )
       cl_uint* program = Program( pop, i );
 
       // The first "node" is the program's size
-      *program = tree_size;
+      SetProgramSize( program, tree_size );
 
       CreateLinearTree( ++program, tree_size );
    }

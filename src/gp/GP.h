@@ -146,7 +146,11 @@ protected:
      Return the size of program pointed by 'g'. The size of
      a program is stored at its first position.
     */
-   unsigned ProgramSize( const cl_uint* program ) const { return *program; };
+   unsigned ProgramSize( const cl_uint* program ) const 
+   { 
+      assert( *program <= MaximumProgramSize() );
+      return *program; 
+   };
    unsigned ProgramSize( const cl_uint* pop, unsigned i ) const 
    { 
       return ProgramSize( Program( pop, i ) );
