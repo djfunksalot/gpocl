@@ -188,10 +188,18 @@ protected:
     */
    void CopySubTreeMutate( const cl_uint* program_orig, cl_uint* program_dest ) const;
    /**
+     Like CopySubTreeMutate but it does the mutation in loco.
+    */
+   void SubTreeMutate( cl_uint* program ) const;
+   /**
      Copy the individual @ref program_orig into @ref program_dest but
      with a random node mutated.
     */
    void CopyNodeMutate( const cl_uint* program_orig, cl_uint* program_dest ) const;
+   /**
+     Like CopyNodeMutate but it does the mutation in loco.
+    */
+   void NodeMutate( cl_uint* program ) const;
 
    /**
      Create a linear tree of the exactly given size, starting at 'node'.

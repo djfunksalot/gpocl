@@ -153,8 +153,8 @@ void GP::Breed( cl_uint* old_pop, cl_uint* new_pop, const cl_float* errors )
    // Tournament:
    for( unsigned i = m_params->m_elitism_size; i < m_params->m_population_size; ++i )
    {
-      //unsigned sel = Tournament( old_pop, errors );
 
+      // Genetic operations
       if( Random::Probability( m_params->m_crossover_probability ) )
          // Respectively: mom, dad, and child
          Crossover( Program( old_pop, Tournament( old_pop, errors ) ),
@@ -162,10 +162,14 @@ void GP::Breed( cl_uint* old_pop, cl_uint* new_pop, const cl_float* errors )
                     Program( new_pop, i ) );
       else
          Clone( Program( old_pop, Tournament( old_pop, errors ) ), Program( new_pop, i ) );
-      //if( Random::Probability( m_params->m_mutation_probability ) )
-   // Genetic operations
-   // FIXME:
-      //CopySubTreeMutate( Program( old_pop, sel ), Program( new_pop, i ) );
+
+      // Every genetic operator have a chance to go wrong
+      if( Random::Probability( m_params->m_mutation_probability ) )
+     //    if( Random::Probability( 0.5 ) )
+            NodeMutate( Program( new_pop, i ) );
+      //   else
+       //     SubTreeMutate( Program( new_pop, i ) );
+
 /*#ifndef NDEBUG
       std::cout << std::endl;
       PrintProgram( Program( old_pop, i ) );
@@ -225,6 +229,75 @@ void GP::Crossover( const cl_uint* mom, const cl_uint* dad, cl_uint* child ) con
    // FIXME:
    if( TreeSize( child + 1 ) != ProgramSize( child ) )
       throw Error( "Sizes don't match." );
+}
+
+// -----------------------------------------------------------------------------
+void GP::SubTreeMutate( cl_uint* program ) const
+{
+#if 0
+#define CAN_CHANGE_ORIGINAL_SIZE 1
+
+   // Copy the size (CopyNodeMutate, differently from CopySubTreeMutate doesn't
+   // change the actual size of the program)
+   assert( program_orig != NULL && program_dest != NULL && program_orig != program_dest );
+   assert( ProgramSize( program_orig ) <= MaximumTreeSize() );
+
+   unsigned size = *program_orig;
+   // Pos 0 is the program size; pos 1 is the first node and 'program size + 1'
+   // is the last node.
+   unsigned mutation_point = Random::Int( 1, size ); // [1, size] (inclusive)
+
+   //                   (mutation point)
+   //                          v
+   // [ ]     [ ]     [ ]     [*]     [*]     [*]     [ ]    [ ]
+   // |      first      |     | mutated subtree |     | second |
+
+   // Copy the first fragment but not the size (for now).
+   for( unsigned i = 1; i < mutation_point; ++i )
+      program_dest[i] = program_orig[i];
+
+   // Create a new random subtree of same size of the original one and put it
+   // in the corresponding place in program_dest
+   unsigned subtree_size = TreeSize( &program_orig[mutation_point] );
+#ifdef CAN_CHANGE_ORIGINAL_SIZE
+   unsigned new_subtree_size = Random::Int( 1, 
+         MaximumTreeSize() - ( ProgramSize( program_orig ) - subtree_size ) );
+#else
+   unsigned new_subtree_size = subtree_size;
+#endif
+   CreateLinearTree( &program_dest[mutation_point], new_subtree_size );
+
+   // Continue to copy the second fragment
+   for( unsigned i = mutation_point + subtree_size; i < size + 1; ++i )
+      program_dest[i + (new_subtree_size - subtree_size)] = program_orig[i];
+
+   // Finally, set the resulting tree size to the newly generated program
+   SetProgramSize( program_dest, ProgramSize( program_orig ) + 
+                                (new_subtree_size - subtree_size ) );
+#endif
+}
+
+// -----------------------------------------------------------------------------
+void GP::NodeMutate( cl_uint* program ) const
+{
+   // Copy the size (CopyNodeMutate, differently from CopySubTreeMutate doesn't
+   // change the actual size of the program)
+   assert( program != NULL );
+   assert( ProgramSize( program ) <= MaximumTreeSize() );
+
+   // Pos 0 is the program size; pos 1 is the first node and 'program size + 1'
+   // is the last node.
+   unsigned mutation_point = Random::Int( 1, ProgramSize( program ) ); // [1, size] (inclusive)
+
+   //                      (mutation point)
+   //                             v
+   // [ ]     [ ]     [ ]        [*]         [ ]     [ ]     [ ]
+   // |      first      |   | mutated pt |   | second          |
+
+   // Mutate the node by a random node of the same arity (remember, this is *node*
+   // mutation!).
+   program[mutation_point] = m_primitives.RandomNode( ARITY( program[mutation_point] ),
+                                                      ARITY( program[mutation_point] ) );
 }
 
 // -----------------------------------------------------------------------------
