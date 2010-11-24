@@ -109,21 +109,21 @@ void GP::Evolve()
    cl_uint* tmp_pop = pop_b;
 
    // 1:
-   std::cout << "Evolving initial generation... ";
+   std::cout << "\n[Gen 1 of " << m_params->m_number_of_generations << "]...\n";
    InitializePopulation( cur_pop );
    // 2:
    EvaluatePopulation( cur_pop, errors );
-   std::cout << "done.\n";
+   //std::cout << "\n";
 
    // 3:
    for( unsigned gen = 2; gen <= m_params->m_number_of_generations; ++gen )
    {
-      std::cout << "Evolving generation " << gen << "... ";
+      std::cout << "\n[Gen " << gen << " of " << m_params->m_number_of_generations << "]...\n";
       // 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16:
       Breed( cur_pop, tmp_pop, errors );
       // 17:
       if( EvaluatePopulation( tmp_pop, errors ) ) break;
-      std::cout << "done.\n";
+      //std::cout << "\n";
 
       // 18:
       std::swap( cur_pop, tmp_pop );
@@ -455,9 +455,9 @@ bool GP::EvaluatePopulation( cl_uint* pop, cl_float* errors )
          m_best_error = errors[i];
          Clone( Program( pop, i ), m_best_program );
 
-         std::cout << "\nBest so far: ";
+         std::cout << "Found better: [" << m_best_error << "] ";
          PrintProgram( m_best_program );
-         std::cout << " (error: " << m_best_error << ")\n";
+         std::cout << " (size: " << ProgramSize( m_best_program ) << ")\n";
       }
 
       // TODO: Pick the best and fill the elitism vector (if any)
