@@ -27,6 +27,21 @@
 #ifndef GP_hh
 #define GP_hh
 
+///////////// Definitions //////////////
+
+/*
+   When defined profiling informations about kernel execution are taken.
+*/
+#define PROFILING 1
+
+/*
+   When MAPPING is defined the output values (predictions) from the kernel
+   executions are read via mapping, which is supposed faster than explicit
+   copies.
+*/
+#define MAPPING 1
+////////////////////////////////////////
+
 #define __CL_ENABLE_EXCEPTIONS
 //TODO: #define CL_DEVICE_FISSION
 
@@ -49,7 +64,7 @@
 /*
 Definitions:
    Node: an individual cl_uint packing three elements: 
-        (1) arity, (2) index, and possibly (3) a value.
+        (1) arity, (2) index, and possibly (3) a value (integer or real).
    Tree: a set of nodes representing a complete (sub)tree.
    Program: the size of a tree and the tree itself
 
@@ -61,12 +76,6 @@ Definitions:
     |________________ program ___________________|
 */
 
-/*
-   When MAPPING is defined the output values (predictions) from the kernel
-   executions are read via mapping, which is supposed faster than explicit
-   copies.
-*/
-#define MAPPING 1
 
 /*
 FIXME:
@@ -255,6 +264,12 @@ protected:
 
    size_t m_num_global_wi;
    size_t m_num_local_wi;
+
+#ifdef PROFILING
+   cl_ulong m_kernel_time;
+   cl_ulong m_launch_time;
+   cl_uint m_kernel_calls;
+#endif
 protected:
    cl_float* m_predicted_Y;
    cl_float* m_X; /**< Linear version of the original data points (will be

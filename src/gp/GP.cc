@@ -123,17 +123,19 @@ void GP::Evolve()
       Breed( cur_pop, tmp_pop, errors );
       // 17:
       if( EvaluatePopulation( tmp_pop, errors ) ) break;
-      //std::cout << "\n";
 
       // 18:
       std::swap( cur_pop, tmp_pop );
    } // 19
 
    // 20:
-   std::cout << "Best program found: [" << m_best_error << "] ";
+   std::cout << "\nBest program found: [" << m_best_error << "] ";
    PrintProgram( m_best_program );
    std::cout << " (size: " << ProgramSize( m_best_program ) << ")\n";
 
+#ifdef PROFILING
+   std::cout << "\n[Avg. KET: " << m_kernel_time / (m_kernel_calls * 1.0E9) << "s] [Avg. KLT: " << m_launch_time / (m_kernel_calls * 1.0E9) << "s] | [Acc. KET: " << m_kernel_time/1.0E+9 << "s] [Acc. KLT: " << m_launch_time/1.0E+9 << "s] | [Kernel calls: " << m_kernel_calls << "]\n";
+#endif
    // Clean up
    delete[] pop_a;
    delete[] pop_b;
@@ -188,7 +190,6 @@ void GP::Crossover( const cl_uint* mom, const cl_uint* dad, cl_uint* child ) con
    unsigned pt_dad;
    unsigned mom_subtree_size;
    unsigned dad_subtree_size;
-   unsigned child_tree_size;
    register unsigned i,j;
 
    // Choose cut points (mom/dad) that don't go beyond the maximum tree size
@@ -410,13 +411,33 @@ bool GP::EvaluatePopulation( cl_uint* pop, cl_float* errors )
          sizeof( cl_uint ) * ( m_params->m_population_size * MaximumProgramSize() ),
          pop, NULL, NULL);
 
+#ifdef PROFILING
+   cl::Event e_time;
+#endif
+   
    // ---------- begin kernel execution
    m_queue.enqueueNDRangeKernel( m_kernel, cl::NDRange(), cl::NDRange( m_num_global_wi ), 
-                                 cl::NDRange( m_num_local_wi ) );
+                                 cl::NDRange( m_num_local_wi )
+#ifdef PROFILING
+                                 , NULL, &e_time
+#endif
+         );
    // ---------- end kernel execution
 
    // Wait until the kernel has finished
    m_queue.finish();
+
+#ifdef PROFILING
+   cl_ulong started, ended, enqueued;
+   e_time.getProfilingInfo( CL_PROFILING_COMMAND_START, &started );
+   e_time.getProfilingInfo( CL_PROFILING_COMMAND_END, &ended );
+   e_time.getProfilingInfo( CL_PROFILING_COMMAND_QUEUED, &enqueued );
+
+   ++m_kernel_calls;
+
+   m_kernel_time += ended - started;
+   m_launch_time += started - enqueued;
+#endif
 
    // TODO: Do I need to always Map and Unmap?
 #ifdef MAPPING
@@ -518,7 +539,17 @@ void GP::OpenCLInit()
 
    std::cerr << "Max CU: " << m_max_cu << " WGS: " << m_max_wg_size << " WIS[0]:" << m_max_wi_size <<  std::endl;
 
+#ifdef PROFILING
+   m_queue = cl::CommandQueue( m_context, m_device, CL_QUEUE_PROFILING_ENABLE );
+
+   // Ensure that the performance counters are empty
+   m_kernel_time = 0;
+   m_launch_time = 0;
+   m_kernel_calls = 0;
+#else
    m_queue = cl::CommandQueue( m_context, m_device, 0 );
+#endif
+
 }
 
 // -----------------------------------------------------------------------------
