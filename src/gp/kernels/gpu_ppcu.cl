@@ -42,7 +42,7 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 
       // -------------------------------
 
-      partial_error += pow( POP - Y[ iter * wg_size + i_id ], 2 );
+      partial_error += pown( POP - Y[ iter * wg_size + i_id ], 2 );
       //pred_Y[NUM_POINTS * g_id + iter * wg_size + i_id] = POP;
    }
 
