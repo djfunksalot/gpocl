@@ -41,7 +41,7 @@ Params* GP::m_params = 0;
 // -----------------------------------------------------------------------------
 GP::GP( Params& p, cl_device_type device_type ): m_device_type( device_type ),
                                                  m_X( 0 ),
-                                                 m_predicted_Y( 0 ),
+                                                 m_E( 0 ),
                                                  m_num_points( 0 ),
                                                  m_y_dim( 1 ), 
                                                  m_x_dim( 0 ),
@@ -100,7 +100,7 @@ void GP::Evolve()
    */
 
 #ifndef MAPPING
-   m_predicted_Y = new cl_float[ m_num_points * m_params->m_population_size ];
+   m_E = new cl_float[ m_num_local_wi * m_params->m_population_size ];
 #endif
 
    cl_float* errors = new cl_float[ m_params->m_population_size ];
@@ -440,12 +440,12 @@ bool GP::EvaluatePopulation( cl_uint* pop, cl_float* errors )
 
    // TODO: Do I need to always Map and Unmap?
 #ifdef MAPPING
-   m_predicted_Y = (cl_float*) m_queue.enqueueMapBuffer( m_buf_predicted_Y, CL_TRUE, 
-         CL_MAP_READ, 0, m_num_points * m_params->m_population_size * sizeof(cl_float) );
+   m_E = (cl_float*) m_queue.enqueueMapBuffer( m_buf_E, CL_TRUE, 
+         CL_MAP_READ, 0, m_num_local_wi * m_params->m_population_size * sizeof(cl_float) );
 #else
-   m_queue.enqueueReadBuffer( m_buf_predicted_Y, CL_TRUE, 0,
-         m_num_points * m_params->m_population_size * sizeof(cl_float),
-         m_predicted_Y, NULL, NULL );
+   m_queue.enqueueReadBuffer( m_buf_E, CL_TRUE, 0,
+         m_num_local_wi * m_params->m_population_size * sizeof(cl_float),
+         m_E, NULL, NULL );
 #endif
 
    // --- Fitness calculation -----------------
@@ -457,12 +457,10 @@ bool GP::EvaluatePopulation( cl_uint* pop, cl_float* errors )
       //std::cout << "\nProgram: [" << i << "] ";
    //   PrintProgram( Program( pop, i )  );
     //  std::cout << " (size: " << ProgramSize( Program( pop, i ) ) << ")\n";
-      for( unsigned j = 0; j < m_num_points; ++j )
+      for( unsigned j = 0; j < m_num_local_wi; ++j )
       {
          // Sum of the squared error
-        // std::cout << std::setprecision(16) << "[" << m_predicted_Y[i * m_num_points + j] << "]";
-         errors[i] += std::pow( m_predicted_Y[i * m_num_points + j] - m_Y[j], 2 );
-        // errors[i] += std::abs( m_predicted_Y[i * m_num_points + j] - m_Y[j] );
+         errors[i] += m_E[ i * m_num_local_wi + j ];
       }
      // std::cout << "\n";
 
@@ -492,7 +490,7 @@ bool GP::EvaluatePopulation( cl_uint* pop, cl_float* errors )
       // TODO: Pick the best and fill the elitism vector (if any)
    }
 #ifdef MAPPING
-   m_queue.enqueueUnmapMemObject( m_buf_predicted_Y, m_predicted_Y );
+   m_queue.enqueueUnmapMemObject( m_buf_E, m_E );
 #endif
 
    // We should stop the evolution if an error below the specified tolerance is found
@@ -565,16 +563,20 @@ void GP::CreateBuffers()
                          CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
                          sizeof( cl_float ) * m_num_points * m_x_dim,
                          m_X );
+   std::cerr << "Trying to allocate " << sizeof( cl_float ) * m_num_points << " bytes\n";
+   m_buf_Y = cl::Buffer( m_context,
+                         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                         sizeof( cl_float ) * m_num_points, &m_Y[0] );
 
-   // Buffer (memory on the device) of predicted values
-   std::cerr << "Trying to allocate " << sizeof( cl_float ) * m_num_points * m_params->m_population_size << " bytes\n";
-   m_buf_predicted_Y = cl::Buffer( m_context,
+   // Buffer (memory on the device) of partial errors
+   std::cerr << "Trying to allocate " << sizeof( cl_float ) * m_num_local_wi * m_params->m_population_size << " bytes\n";
+   m_buf_E = cl::Buffer( m_context,
 #ifdef MAPPING
-                                   CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
+                         CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
 #else
-                                   CL_MEM_WRITE_ONLY,
+                         CL_MEM_WRITE_ONLY,
 #endif
-                                   m_num_points * m_params->m_population_size * sizeof(cl_float) );
+                         m_num_local_wi * m_params->m_population_size * sizeof(cl_float) );
 
   /* 
    Structure of a program (individual)
@@ -662,8 +664,9 @@ void GP::BuildKernel()
    // Set kernel arguments
    m_kernel.setArg( 0, m_buf_pop );
    m_kernel.setArg( 1, m_buf_X );
-   m_kernel.setArg( 2, m_buf_predicted_Y );
-   m_kernel.setArg( 3, sizeof(uint) * MaximumTreeSize(), NULL );
+   m_kernel.setArg( 2, m_buf_Y );
+   m_kernel.setArg( 3, m_buf_E );
+   m_kernel.setArg( 4, sizeof(uint) * MaximumTreeSize(), NULL );
 }
 
 // -----------------------------------------------------------------------------

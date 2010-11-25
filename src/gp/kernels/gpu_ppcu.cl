@@ -1,4 +1,5 @@
-__kernel void evaluate( __global const uint* pop, __global const float* X, __global float* pred_Y, __local uint* program )
+__kernel void evaluate( __global const uint* pop, __global const float* X, __global const float* Y,
+                        __global float* E, __local uint* program )
 {
    __local unsigned int program_size;
    CREATE_STACK( float, MAX_TREE_SIZE );
@@ -6,6 +7,8 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
    uint i_id = get_local_id( 0 );
    uint g_id = get_group_id( 0 );
    uint wg_size = get_local_size( 0 );
+
+   float partial_error = 0.0f;
 
    // Get the actual program's size
    if( i_id == 0 ) program_size = pop[(MAX_TREE_SIZE + 1) * g_id];
@@ -39,8 +42,11 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 
       // -------------------------------
 
-      pred_Y[NUM_POINTS * g_id + iter * wg_size + i_id] = POP;
+      partial_error += pow( POP - Y[ iter * wg_size + i_id ], 2 );
+      //pred_Y[NUM_POINTS * g_id + iter * wg_size + i_id] = POP;
    }
+
+   E[ g_id * wg_size + i_id ] = partial_error;
 
    // TODO: Prefix sum, i.e., calculate the fitness!
 }

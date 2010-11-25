@@ -119,22 +119,20 @@ public:
       // Load primitives
       m_primitives.Load( m_x_dim, m_params->m_maximum_tree_size, m_params->m_primitives );
 
-      // Create context/devices (CPU != GPU)
+      // Create context/devices
       // Create queue
       OpenCLInit();
-
-      // Create buffers (CPU != GPU?)
-      CreateBuffers();
-
-      // Create program ("build kernel") (CPU != GPU)
-      BuildKernel();
-      // Set kernel arguments? (or is it done in EvaluatePopulation?)
 
       // [virtual]
       CalculateNDRanges();
 
-      Evolve();
+      // Create buffers
+      CreateBuffers();
 
+      // Create program ("build kernel")
+      BuildKernel();
+
+      Evolve();
    }
 
 protected:
@@ -257,8 +255,9 @@ protected:
    cl::Context m_context;
    cl::Device m_device;
 
-   cl::Buffer m_buf_predicted_Y;
+   cl::Buffer m_buf_E;
    cl::Buffer m_buf_X;
+   cl::Buffer m_buf_Y;
    cl::Buffer m_buf_pop;
 
    std::string m_kernel_src;
@@ -277,7 +276,7 @@ protected:
    cl_uint m_kernel_calls;
 #endif
 protected:
-   cl_float* m_predicted_Y;
+   cl_float* m_E; /**< Array of partial errors. */
    cl_float* m_X; /**< Linear version of the original data points (will be
                    transposed on the GPU for better access pattern). */
 protected:
