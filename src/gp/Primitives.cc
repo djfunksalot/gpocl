@@ -58,7 +58,7 @@ void Primitives::Load( unsigned x_dim, unsigned max_gen_size, const std::string&
    Register( 1, "identity",     "_",            "ARG(0)" );
    assert( GPF_IDENTITY == DB.size() - 1 );
 
-   Register( 3, "ifthenelse",   "ite",          "ARG(0) ? ARG(1) : ARG(2)" );
+   Register( 3, "if-then-else",   "ite",          "ARG(0) ? ARG(1) : ARG(2)" );
 
    Register( 2, "add",          "+",            "ARG(0) + ARG(1)" );
    Register( 2, "minus",        "-",            "ARG(0) - ARG(1)" );

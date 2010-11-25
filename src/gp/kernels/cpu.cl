@@ -7,9 +7,7 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
    __local unsigned int program_size;
    CREATE_STACK( float, MAX_TREE_SIZE )
 
-   //uint i_id = get_local_id( 0 );
    uint g_id = get_group_id( 0 );
-//   uint wg_size = get_local_size( 0 );
 
    // Get the actual program's size
    program_size = pop[(MAX_TREE_SIZE + 1) * g_id];

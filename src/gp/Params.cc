@@ -51,7 +51,7 @@ Params::ShowUsage( const char* app = "gpocl" ) const // -h or --help
 {
    cout  
 
-   << "OpenCL Genetic Programming (GPOCL)\n"
+   << "Genetic Programming in OpenCL (GPOCL)\n"
    << "\n"
    << "Usage: " << app << " [-cpu [n] | -gpu <fpi|fpc|ppcu|ppce>] [OPTION] <data points>\n"
    << "\n"    
@@ -112,6 +112,7 @@ Params::Initialize()
  //  Opts.String.Add( "-ts", "--terminal-set", "vars,c_1,c_2,c_pi,c_ephemeral" );
 
    Opts.Bool.Add( "-cpu", "--cpu" );
+  // Opts.Bool.Add( "-gpu", "--gpu" );
    Opts.Int.Add( "-cpu", "--cpu", 1, 1, numeric_limits<int>::max() ).UnSet( CmdLine::NO_VALUE );
    Opts.String.Add( "-gpu", "--gpu", "ppcu", "fpi", "fpc", "ppcu", "ppce", NULL );
 
@@ -155,7 +156,6 @@ Params::Initialize()
       else 
          m_cpu_cores = Opts.Int.Get( "-cpu" );
    }
-
 
    // ------------------------------------
    if( Opts.Bool.Get( "-h" ) ) 

@@ -33,6 +33,8 @@
 #include <algorithm>
 #include <cassert>
 #include <limits>
+// FIXME:
+#include <iomanip>
 
 Params* GP::m_params = 0;
 
@@ -130,7 +132,7 @@ void GP::Evolve()
 
    // 20:
    std::cout << "\nBest program found: [" << m_best_error << "] ";
-   PrintProgram( m_best_program );
+   PrintProgramPretty( m_best_program );
    std::cout << " (size: " << ProgramSize( m_best_program ) << ")\n";
 
 #ifdef PROFILING
@@ -452,16 +454,17 @@ bool GP::EvaluatePopulation( cl_uint* pop, cl_float* errors )
    {
       errors[i] = 0.0f;
 
+      //std::cout << "\nProgram: [" << i << "] ";
+   //   PrintProgram( Program( pop, i )  );
+    //  std::cout << " (size: " << ProgramSize( Program( pop, i ) ) << ")\n";
       for( unsigned j = 0; j < m_num_points; ++j )
       {
          // Sum of the squared error
+        // std::cout << std::setprecision(16) << "[" << m_predicted_Y[i * m_num_points + j] << "]";
          errors[i] += std::pow( m_predicted_Y[i * m_num_points + j] - m_Y[j], 2 );
         // errors[i] += std::abs( m_predicted_Y[i * m_num_points + j] - m_Y[j] );
       }
-
-
-      // If isnan then something went wrong
-      //assert( !isnan( errors[i] ) );
+     // std::cout << "\n";
 
       if( isinf( errors[i] ) || isnan( errors[i] ) )
       {
@@ -481,7 +484,8 @@ bool GP::EvaluatePopulation( cl_uint* pop, cl_float* errors )
          Clone( Program( pop, i ), m_best_program );
 
          std::cout << "Found better: [" << m_best_error << "] ";
-         PrintProgram( m_best_program );
+         //PrintProgram( m_best_program );
+         PrintProgramPretty( m_best_program );
          std::cout << " (size: " << ProgramSize( m_best_program ) << ")\n";
       }
 
@@ -758,26 +762,58 @@ void GP::PrintProgram( const cl_uint* program ) const
    PrintTree( program + 1 );
 }
 
+void GP::PrintProgramPretty( const cl_uint* program, int start, int end ) const
+{
+   if( (start == -1) || (end == -1) ) { start = 0; end = ProgramSize( program++ ) - 1; }
+   
+   if( ARITY( *(program + start) ) == 0 )
+   {
+      PrintNode( program + start );
+      return;
+   }
+   else
+   {
+      PrintNode( program + start ); std::cout << "( ";
+   }
+
+   int i;
+   start++;
+   while( start <= end )
+   {
+      i = TreeSize( program + start );
+      PrintProgramPretty( program, start, ( i > 1 ) ? start + i - 1 : end );
+      start += i; 
+      
+      /* Put the trailing ")" */
+      if( start <= end ) std::cout << ", "; else std::cout << " )";
+   }
+   return;
+}
+
+void GP::PrintNode( const cl_uint* node ) const
+{
+   switch( INDEX( *node ) )
+   {
+      case Primitives::GPT_VAR:
+         std::cout << "X" << AS_INT( *node ) << "";
+         break;
+      case Primitives::GPT_EPHEMERAL:
+         std::cout << AS_FLOAT( *node ) << "";
+         break;
+      case Primitives::GPF_IDENTITY:
+         std::cout << "";
+         break;
+      default:
+         std::cout << m_primitives.DB[INDEX(*node)].name << "";
+   }
+}
+
 void GP::PrintTree( const cl_uint* node ) const
 {
    int sum = 0;
 
    do {
-      switch( INDEX(*node) )
-      {
-         case Primitives::GPT_VAR:
-            std::cout << "X" << AS_INT(*node) << " ";
-            break;
-         case Primitives::GPT_EPHEMERAL:
-            std::cout << AS_FLOAT(*node) << " ";
-            break;
-         case Primitives::GPF_IDENTITY:
-            std::cout << "= ";
-            break;
-         default:
-            std::cout << m_primitives.DB[INDEX(*node)].symbol << " ";
-      }
-
+      PrintNode( node );
       sum += ARITY( *node++ ) - 1;
    } while( sum != -1 );
 }

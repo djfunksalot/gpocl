@@ -220,7 +220,9 @@ protected:
    void CreateLinearTree( cl_uint* node, unsigned size ) const;
 
    void PrintProgram( const cl_uint* program ) const;
+   void PrintProgramPretty( const cl_uint* program, int start = -1, int end = -1 ) const;
    void PrintTree( const cl_uint* node ) const;
+   void PrintNode( const cl_uint* node ) const;
 
    unsigned TreeSize( const cl_uint* node ) const
    {
@@ -353,15 +355,19 @@ public:
       {
          // Load the specific kernel according to the actual GPU strategy
          case Params::DEVICE_GPU_FPI:
+            std::cout << "Strategy 'fitness-parallel interpreted'\n";
             LoadKernel( "kernels/gpu_fp.cl" );
             break;
          case Params::DEVICE_GPU_FPC:
+            std::cout << "Strategy 'fitness-parallel compiled'\n";
             LoadKernel( "kernels/gpu_fp.cl" );
             break;
          case Params::DEVICE_GPU_PPCU:
+            std::cout << "Strategy 'population-parallel compute unit'\n";
             LoadKernel( "kernels/gpu_ppcu.cl" );
             break;
          case Params::DEVICE_GPU_PPCE:
+            std::cout << "Strategy 'population-parallel compute element'\n";
             LoadKernel( "kernels/gpu_ppce.cl" );
             break;
       }
