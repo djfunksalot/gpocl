@@ -105,7 +105,7 @@ public:
       std::cerr << "\nCleaning GP base...\n"; 
       if( m_X ) delete[] m_X;
 #ifndef MAPPING
-      if( m_predicted_Y ) delete[] m_predicted_Y;
+      if( m_E ) delete[] m_E;
 #endif
       delete[] m_best_program;
    }
@@ -294,7 +294,12 @@ public:
    unsigned m_x_dim; /**< Number of input variables. */
    unsigned m_y_dim; /**< Number of output variables. Currently, always = 1. */
 
+   
+
    std::vector<cl_float> m_Y;
+   //cl_float* m_Y;
+
+
 
 
    static Params* m_params; /**< Pointer to Params class (holds the parameters). */

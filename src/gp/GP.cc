@@ -454,15 +454,16 @@ bool GP::EvaluatePopulation( cl_uint* pop, cl_float* errors )
    {
       errors[i] = 0.0f;
 
-      //std::cout << "\nProgram: [" << i << "] ";
-   //   PrintProgram( Program( pop, i )  );
-    //  std::cout << " (size: " << ProgramSize( Program( pop, i ) ) << ")\n";
+//      std::cout << "\nProgram: [" << i << "] ";
+ //     PrintProgramPretty( Program( pop, i )  );
+  //    std::cout << " (size: " << ProgramSize( Program( pop, i ) ) << ")\n";
       for( unsigned j = 0; j < m_num_local_wi; ++j )
       {
          // Sum of the squared error
+   //      std::cout << std::setprecision(16) << "[" << m_E[i * m_num_local_wi + j] << ", " << errors[i] << "]";
          errors[i] += m_E[ i * m_num_local_wi + j ];
       }
-     // std::cout << "\n";
+    //  std::cout << "\n";
 
       if( isinf( errors[i] ) || isnan( errors[i] ) )
       {
@@ -868,6 +869,12 @@ void GP::LoadPoints( std::vector<std::vector<cl_float> > & out_x )
       throw Error( "[" + m_params->m_data_points[0] + "]: file not found." );
 	}
 
+   
+   
+  // m_Y = new cl_float[ 16 ];
+
+
+
    unsigned cur_line = 0; std::string line;
    while( std::getline( points, line ) )
    {
@@ -907,8 +914,14 @@ void GP::LoadPoints( std::vector<std::vector<cl_float> > & out_x )
 
       // Here we append directly in m_Y because both CPU and GPU we use it (m_Y) throughout
       // the evolutionary process.
+
+
+
+  //    m_Y[out_x.size()] = v.back(); v.pop_back();
       m_Y.push_back( v.back() ); v.pop_back();
       
+
+
       out_x.push_back( v );
    }
 

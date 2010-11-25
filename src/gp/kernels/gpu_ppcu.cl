@@ -1,3 +1,5 @@
+//#pragma OPENCL EXTENSION cl_amd_printf : enable
+
 __kernel void evaluate( __global const uint* pop, __global const float* X, __global const float* Y,
                         __global float* E, __local uint* program )
 {
@@ -39,10 +41,18 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 
       // -------------------------------
 
+//      if( g_id == 5 && i_id == 0 ) 
+ //        printf( "[%f]", Y[ iter * wg_size + i_id ]);
+         //printf( "[%f - %f: %f]", TOP, Y[ iter * wg_size + i_id ], partial_error );
       partial_error += pown( POP - Y[ iter * wg_size + i_id ], 2 );
+    //  partial_error += ( TOP - Y[ iter * wg_size + i_id ] ) *
+     //                  ( TOP - Y[ iter * wg_size + i_id ] ); POP;
+    //  partial_error += fabs( POP - Y[ iter * wg_size + i_id ] );
    }
 
    E[ g_id * wg_size + i_id ] = partial_error;
 
+//   if( g_id == 5 )
+      //printf( "[%f]", partial_error );
    // TODO: Prefix sum, i.e., calculate the fitness!
 }

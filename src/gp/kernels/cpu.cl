@@ -26,21 +26,15 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
       // Calls the interpreter (C macro)
       // -------------------------------
       for( int op = program_size; op-- ; )
-{
-   //printf( "[%d][%d](%d,", op, INDEX( program[op] ), stack_top );
-
+      {
          switch( INDEX( program[op] ) )
          {
             INTERPRETER_CORE
             default:
                PUSH( 0, X[iter * X_DIM + AS_INT( program[op] )] );
          }
-   //printf( "%d,%f)", stack_top, TOP );
-}
-//printf( ": %f\n", TOP );
-      // -------------------------------
-
-      partial_error += pown( POP - Y[ iter + g_id ], 2 );
+      }
+      partial_error += pown( POP - Y[ iter ], 2 );
    }
 
    E[ g_id ] = partial_error;
