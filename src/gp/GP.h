@@ -341,7 +341,7 @@ public:
       m_num_global_wi = m_num_local_wi * m_params->m_population_size;
 
       // FIXME: Remove these restrictions! (need to change the kernel)
-      assert( m_params->m_maximum_tree_size <= m_num_local_wi );
+      assert( MaximumTreeSize() <= m_num_local_wi );
       assert( m_num_points % m_num_local_wi == 0 );
    }
 

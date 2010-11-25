@@ -1,6 +1,7 @@
-#pragma OPENCL EXTENSION cl_amd_printf : enable
+//#pragma OPENCL EXTENSION cl_amd_printf : enable
 
-__kernel void evaluate( __global const uint* pop, __global const float* X, __global float* pred_Y, __local uint* program )
+__kernel void evaluate( __global const uint* pop, __global const float* X, __global const float* Y,
+                        __global float* E, __local uint* program )
 {
    // TODO: remove __local uint* program
 
@@ -8,6 +9,8 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
    CREATE_STACK( float, MAX_TREE_SIZE )
 
    uint g_id = get_group_id( 0 );
+
+   float partial_error = 0.0f;
 
    // Get the actual program's size
    program_size = pop[(MAX_TREE_SIZE + 1) * g_id];
@@ -37,6 +40,8 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 //printf( ": %f\n", TOP );
       // -------------------------------
 
-      pred_Y[NUM_POINTS * g_id + iter] = POP;
+      partial_error += pown( POP - Y[ iter + g_id ], 2 );
    }
+
+   E[ g_id ] = partial_error;
 }

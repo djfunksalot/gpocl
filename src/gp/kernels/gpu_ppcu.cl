@@ -23,10 +23,7 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 
    barrier(CLK_LOCAL_MEM_FENCE);
 
-
    // FIXME: handle cases where num_points is not divided by wg_size
-   // TODO: Check which version below is correct:
-   //for( iter = 0; iter < NUM_POINTS/wg_size - 1; ++iter )
    for( uint iter = 0; iter < NUM_POINTS/wg_size; ++iter )
    {
       // -------------------------------
@@ -43,7 +40,6 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
       // -------------------------------
 
       partial_error += pown( POP - Y[ iter * wg_size + i_id ], 2 );
-      //pred_Y[NUM_POINTS * g_id + iter * wg_size + i_id] = POP;
    }
 
    E[ g_id * wg_size + i_id ] = partial_error;
