@@ -39,7 +39,7 @@
    executions are read via mapping, which is supposed faster than explicit
    copies.
 */
-#define MAPPING 1
+//#define MAPPING 1
 ////////////////////////////////////////
 
 #define __CL_ENABLE_EXCEPTIONS
