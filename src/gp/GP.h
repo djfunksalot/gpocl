@@ -110,7 +110,6 @@ public:
       delete[] m_best_program;
    }
 
-
    void Run()
    {
       // [virtual] Load training points (CPU != GPU)
@@ -137,6 +136,8 @@ public:
 
       Evolve();
    }
+
+   virtual void PrintStrategy() const = 0;
 
 protected:
    virtual void Evolve();
@@ -289,6 +290,8 @@ protected:
    cl_ulong m_kernel_time;
    cl_ulong m_launch_time;
    cl_uint m_kernel_calls;
+
+   unsigned long m_node_evaluations;
 #endif
 protected:
    cl_float* m_E; /**< Array of partial errors. */
@@ -334,6 +337,7 @@ public:
       m_num_global_wi = m_params->m_population_size;
    }
 
+   void PrintStrategy() const { std::cout << "CPU (" << m_max_cu << " compute units)"; }
    virtual ~GPonCPU() { std::cerr << "\nCleaning GPonCPU...\n"; }
 
    void LoadPoints();
@@ -348,6 +352,28 @@ public:
       std::cerr << "\nCleaning GPonGPU...\n";
       //if( m_X ) delete[] m_X;
    }
+
+   void PrintStrategy() const 
+   { 
+      std::cout << "GPU ";
+      switch( m_params->m_device )
+      {
+         case Params::DEVICE_GPU_FPI:
+            std::cout << "FPI";
+            break;
+         case Params::DEVICE_GPU_FPC:
+            std::cout << "FPC";
+            break;
+         case Params::DEVICE_GPU_PPCU:
+            std::cout << "PPCU";
+            break;
+         case Params::DEVICE_GPU_PPCE:
+            std::cout << "PPCE";
+            break;
+      }
+      std::cout << " (" << m_max_cu << " compute units)";
+   }
+
    void SetKernelArgs()
    {
       GP::SetKernelArgs();

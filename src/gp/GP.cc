@@ -45,6 +45,13 @@ GP::GP( Params& p, cl_device_type device_type ): m_device_type( device_type ),
                                                  m_num_points( 0 ),
                                                  m_y_dim( 1 ), 
                                                  m_x_dim( 0 ),
+#ifdef PROFILING
+                                                 // Ensure that the performance counters are empty
+                                                 m_kernel_time( 0 ),
+                                                 m_launch_time( 0 ),
+                                                 m_kernel_calls( 0 ),
+                                                 m_node_evaluations( 0 ),
+#endif
                                                  m_best_error( std::numeric_limits<cl_float>::max() )
 {
    m_params = &p;
@@ -100,13 +107,9 @@ void GP::Evolve()
    */
 
 #ifndef MAPPING
-   // FIXME: Fix ppcu kernel (add prefix sum) to support this change
    m_E = new cl_float[ m_params->m_population_size ];
-   //m_E = new cl_float[ m_num_local_wi * m_params->m_population_size ];
 #endif
 
-   // FIXME: Fix ppcu kernel (add prefix sum) to support this change
-   //cl_float* errors = new cl_float[ m_params->m_population_size ];
    cl_uint* pop_a = new cl_uint[ m_params->m_population_size * MaximumProgramSize() ];
    cl_uint* pop_b = new cl_uint[ m_params->m_population_size * MaximumProgramSize() ];
 
@@ -137,17 +140,19 @@ void GP::Evolve()
    } // 19
 
    // 20:
-   std::cout << "\nBest program found: [" << m_best_error << "] ";
+   std::cout << "\n> Best program found: [" << m_best_error << "] ";
    PrintProgramPretty( m_best_program );
-   std::cout << " (size: " << ProgramSize( m_best_program ) << ")\n";
+   std::cout << " [size: " << ProgramSize( m_best_program ) << "]\n";
 
 #ifdef PROFILING
-   std::cout << "\n[Avg. KET: " << m_kernel_time / (m_kernel_calls * 1.0E6) << "ms] [Avg. KLT: " << m_launch_time / (m_kernel_calls * 1.0E6) << "ms] | [Acc. KET: " << m_kernel_time/1.0E+9 << "s] [Acc. KLT: " << m_launch_time/1.0E+9 << "s] | [Kernel calls: " << m_kernel_calls << "]\n";
+   std::cout << "\n> GPop/s: " << m_node_evaluations / (m_kernel_time/1.0E9) << " | Node evals: " << m_node_evaluations << " | Avg. KET: " << m_kernel_time / (m_kernel_calls * 1.0E6) << "ms | Avg. KLT: " << m_launch_time / (m_kernel_calls * 1.0E6) << "ms | Acc. KET: " << m_kernel_time/1.0E+9 << "s | Acc. KLT: " << m_launch_time/1.0E+9 << "s | Kernel calls: " << m_kernel_calls << "\n";
 #endif
+   std::cout << "> Strategy: "; PrintStrategy(); std::cout << "\n";
+
    // Clean up
    delete[] pop_a;
    delete[] pop_b;
-   //delete[] errors;
+   ///delete[] errors;
 }
 
 // -----------------------------------------------------------------------------
@@ -159,6 +164,12 @@ void GP::Breed( cl_uint* old_pop, cl_uint* new_pop )
    {
       // FIXME: (use the vector of best individuals)
       Clone( m_best_program, Program( new_pop, i ) );
+
+#ifdef PROFILING
+      // Update the total number of nodes that are going to be evaluated (to be
+      // used to calculate how many GPop/s we could achieve).
+      m_node_evaluations += ProgramSize( new_pop, i );
+#endif
    }
 
    // Tournament:
@@ -175,11 +186,18 @@ void GP::Breed( cl_uint* old_pop, cl_uint* new_pop )
 
       // Every genetic operator have a chance to go wrong
       if( Random::Probability( m_params->m_mutation_probability ) )
+      {
          if( Random::Probability( 0.5 ) )
             NodeMutate( Program( new_pop, i ) );
          else
             SubTreeMutate( Program( new_pop, i ) );
+      }
 
+#ifdef PROFILING
+      // Update the total number of nodes that are going to be evaluated (to be
+      // used to calculate how many GPop/s we could achieve).
+      m_node_evaluations += ProgramSize( new_pop, i );
+#endif
 /*#ifndef NDEBUG
       std::cout << std::endl;
       PrintProgram( Program( old_pop, i ) );
@@ -569,11 +587,6 @@ void GP::OpenCLInit()
 
 #ifdef PROFILING
    m_queue = cl::CommandQueue( m_context, m_device, CL_QUEUE_PROFILING_ENABLE );
-
-   // Ensure that the performance counters are empty
-   m_kernel_time = 0;
-   m_launch_time = 0;
-   m_kernel_calls = 0;
 #else
    m_queue = cl::CommandQueue( m_context, m_device, 0 );
 #endif
@@ -781,6 +794,12 @@ void GP::InitializePopulation( cl_uint* pop )
       SetProgramSize( program, tree_size );
 
       CreateLinearTree( ++program, tree_size );
+
+#ifdef PROFILING
+      // Update the total number of nodes that are going to be evaluated (to be
+      // used to calculate how many GPop/s we could achieve).
+      m_node_evaluations += tree_size;
+#endif
    }
 }
 
