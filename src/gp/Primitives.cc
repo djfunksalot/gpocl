@@ -61,7 +61,7 @@ void Primitives::Load( unsigned x_dim, unsigned max_gen_size, const std::string&
    Register( 1, "identity",     "_",            "ARG(0)" );
    assert( GPF_IDENTITY == DB.size() - 1 );
 
-   Register( 3, "if-then-else",   "ite",          "ARG(0) ? ARG(1) : ARG(2)" );
+   Register( 3, "if-then-else", "ite",          "ARG(0) ? ARG(1) : ARG(2)" );
 
    Register( 2, "add",          "+",            "ARG(0) + ARG(1)" );
    Register( 2, "minus",        "-",            "ARG(0) - ARG(1)" );
@@ -76,18 +76,53 @@ void Primitives::Load( unsigned x_dim, unsigned max_gen_size, const std::string&
    Register( 2, "or",           "||",           "ARG(0) || ARG(1)" );
    Register( 2, "pow",          "^",            "pow(ARG(0), ARG(1))" );
    Register( 2, "mean",         "mean",         "(ARG(0) + ARG(1))/2.0f" );
-   Register( 2, "min",          "min",         "min(ARG(0), ARG(1))" );
-   Register( 2, "max",          "max",         "max(ARG(0), ARG(1))" );
+   Register( 2, "min",          "min",          "min(ARG(0), ARG(1))" );
+   Register( 2, "max",          "max",          "max(ARG(0), ARG(1))" );
 
-   Register( 1, "sin",          "sin",          "sin(ARG(0))" );
-   Register( 1, "cos",          "cos",          "cos(ARG(0))" );
-   Register( 1, "not",          "!",            "!(int)ARG(0)" );
-   Register( 1, "neg",          "neg",          "-ARG(0)" );
-   Register( 1, "sqrt",         "sqrt",         "(ARG(0) < 0.0f ? 1.0f : sqrt(ARG(0)))" );
    Register( 1, "^2",           "^2",           "ARG(0) * ARG(0)" );
    Register( 1, "^3",           "^3",           "ARG(0) * ARG(0) * ARG(0)" );
    Register( 1, "^4",           "^4",           "ARG(0) * ARG(0) * ARG(0) * ARG(0)" );
+   Register( 1, "ceil",         "ceil",         "ceil(ARG(0))" );
+   Register( 1, "cos",          "cos",          "cos(ARG(0))" );
+   Register( 1, "exp",          "exp",          "exp(ARG(0))" );
+   Register( 1, "fabs",         "fabs",         "fabs(ARG(0))" );
+   Register( 1, "floor",        "floor",        "floor(ARG(0))" );
+   Register( 1, "log",          "log",          "(ARG(0) < 1.0f ? 1.0f : log(ARG(0)))" );
+   Register( 1, "log2",         "log2",         "(ARG(0) < 1.0f ? 1.0f : log2(ARG(0)))" );
+   Register( 1, "log10",        "log10",        "(ARG(0) < 1.0f ? 1.0f : log10(ARG(0)))" );
+   Register( 1, "neg",          "neg",          "-ARG(0)" );
+   Register( 1, "not",          "!",            "!(int)ARG(0)" );
+   Register( 1, "round",        "round",        "round(ARG(0))" );
+   Register( 1, "sin",          "sin",          "sin(ARG(0))" );
+   Register( 1, "sqrt",         "sqrt",         "(ARG(0) < 0.0f ? 1.0f : sqrt(ARG(0)))" );
 
+   Register( 0, "c_pi",         "3.1415",       "3.14159274101257f" );
+   Register( 0, "c_pi_2",       "1.5707",       "1.57079637050629f" );
+   Register( 0, "c_pi_4",       "0.7853",       "0.78539818525314f" );
+   Register( 0, "c_1_pi",       "0.3183",       "0.31830987334251f" );
+   Register( 0, "c_2_pi",       "0.6366",       "0.63661974668503f" );
+   Register( 0, "c_2_sqrtpi",   "1.1283",       "1.12837922573090f" );
+   Register( 0, "c_sqrt2",      "1.4142",       "1.41421353816986f" );
+   Register( 0, "c_sqrt1_2",    "0.7071",       "0.70710676908493f" );
+   Register( 0, "c_e",          "2.7182",       "2.71828174591064f" );
+   Register( 0, "c_log2e",      "1.4426",       "1.44269502162933f" );
+   Register( 0, "c_log10e",     "0.4342",       "0.43429449200630f" );
+   Register( 0, "c_ln2",        "1.6931",       "0.69314718246460f" );
+   Register( 0, "c_ln10",       "3.3025",       "2.30258512496948f" );
+   Register( 0, "c_0",          "0",            "0.0f" );
+   Register( 0, "c_1",          "1",            "1.0f" );
+   Register( 0, "c_2",          "2",            "2.0f" );
+   Register( 0, "c_3",          "3",            "3.0f" );
+   Register( 0, "c_-1",         "-1",           "-1.0f" );
+   Register( 0, "c_-2",         "-2",           "-2.0f" );
+   Register( 0, "c_-3",         "-3",           "-3.0f" );
+   Register( 0, "c_apery",      "1.2020",       "1.202056903159594f" );
+   Register( 0, "c_catalan",    "0.9159",       "0.915965594177219f" );
+   Register( 0, "c_euler",      "0.5772",       "0.5772156649015329f" );
+   Register( 0, "c_golden",     "1.6180",       "1.618033988749895f" );
+   Register( 0, "c_omega",      "0.5671",       "0.5671432904097839f" );
+
+   /*
    Register( 0, "c_pi",         "3.1415",       "M_PI_F" );
    Register( 0, "c_pi_2",       "1.5707",       "M_PI_2_F" );
    Register( 0, "c_pi_4",       "0.7853",       "M_PI_4_F" );
@@ -101,16 +136,7 @@ void Primitives::Load( unsigned x_dim, unsigned max_gen_size, const std::string&
    Register( 0, "c_log10e",     "0.4342",       "M_LOG10E_F" );
    Register( 0, "c_ln2",        "1.6931",       "M_LN2_F" );
    Register( 0, "c_ln10",       "3.3025",       "M_LN10_F" );
-   Register( 0, "c_0",          "0",            "0.0f" );
-   Register( 0, "c_1",          "1",            "1.0f" );
-   Register( 0, "c_2",          "2",            "2.0f" );
-   Register( 0, "c_-1",         "-1",           "-1.0f" );
-   Register( 0, "c_-2",         "-2",           "-2.0f" );
-   Register( 0, "c_apery",      "1.2020",       "1.202056903159594f" );
-   Register( 0, "c_catalan",    "0.9159",       "0.915965594177219f" );
-   Register( 0, "c_euler",      "0.5772",       "0.5772156649015329f" );
-   Register( 0, "c_golden",     "1.6180",       "1.618033988749895f" );
-   Register( 0, "c_omega",      "0.5671",       "0.5671432904097839f" );
+*/
 
    /////////////////////////////////////////////////////////////
 
