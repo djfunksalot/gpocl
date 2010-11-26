@@ -645,6 +645,7 @@ void GP::BuildKernel()
 
    // program_src = header + kernel
    std::string program_src = 
+      "#define WGS " + util::ToString( m_num_local_wi ) + "\n" +
       "#define POP_SIZE " + util::ToString( m_params->m_population_size ) + "\n" +
       "#define NUM_POINTS " + util::ToString( m_num_points ) + "\n"
       "#define X_DIM " + util::ToString( m_x_dim ) + "\n"

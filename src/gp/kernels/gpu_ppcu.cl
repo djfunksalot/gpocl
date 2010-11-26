@@ -3,14 +3,14 @@
 __kernel void evaluate( __global const uint* pop, __global const float* X, __global const float* Y,
                         __global float* E, __local uint* program )
 {
+   __local float PE[WGS];
+
    __local unsigned int program_size;
    CREATE_STACK( float, MAX_TREE_SIZE );
 
    uint i_id = get_local_id( 0 );
    uint g_id = get_group_id( 0 );
    uint wg_size = get_local_size( 0 );
-
-   float partial_error = 0.0f;
 
    // Get the actual program's size
    if( i_id == 0 ) program_size = pop[(MAX_TREE_SIZE + 1) * g_id];
@@ -19,11 +19,11 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 
    // FIXME: manage cases where program_size > work_group_size (each work-item
    // will need to handle more than one index.
-   // TODO: Check whether or not *all* work-items for this group are complete
-   // when the code reaches the barrier bellow.
    if( i_id < program_size ) program[i_id] = pop[(MAX_TREE_SIZE + 1) * g_id + i_id + 1];
 
    barrier(CLK_LOCAL_MEM_FENCE);
+
+   PE[i_id] = 0.0f;
 
    // FIXME: handle cases where num_points is not divided by wg_size
    for( uint iter = 0; iter < NUM_POINTS/wg_size; ++iter )
@@ -41,18 +41,38 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 
       // -------------------------------
 
-//      if( g_id == 5 && i_id == 0 ) 
- //        printf( "[%f]", Y[ iter * wg_size + i_id ]);
-         //printf( "[%f - %f: %f]", TOP, Y[ iter * wg_size + i_id ], partial_error );
-      partial_error += pown( POP - Y[ iter * wg_size + i_id ], 2 );
-    //  partial_error += ( TOP - Y[ iter * wg_size + i_id ] ) *
-     //                  ( TOP - Y[ iter * wg_size + i_id ] ); POP;
-    //  partial_error += fabs( POP - Y[ iter * wg_size + i_id ] );
+      PE[i_id] += pown( POP - Y[ iter * wg_size + i_id ], 2 );
    }
 
-   E[ g_id * wg_size + i_id ] = partial_error;
+   /*
+      Parallel way to perform reduction:
 
-//   if( g_id == 5 )
-      //printf( "[%f]", partial_error );
-   // TODO: Prefix sum, i.e., calculate the fitness!
+      | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |     WGS = 8
+
+        |___|   |___|   |___|   |___|       d = 2
+        
+      | 0 |   | 2 |   | 4 |   | 6 |      
+
+        |_______|       |_______|           d = 4
+
+      | 0 |           | 4 |               
+
+        |_______________|                   d = 8
+
+      | 0 |
+
+        |-----> total sum is stored on the first work-item
+    */
+         
+   // FIXME: ensure WGS is power of 2 (p.e., when NUM_POINTS < Max WGS, then
+   // WGS = NUM_POINTS )
+   for( uint d = 2; d<= WGS; d *= 2 )
+   {
+      barrier(CLK_LOCAL_MEM_FENCE);
+
+      if( i_id % d == 0 ) PE[i_id] += PE[i_id + d/2];
+   }
+
+   // Store on the global memory (to be read by the host)
+   if( i_id == 0 ) E[g_id] = PE[0];
 }
