@@ -7,13 +7,16 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 
    uint i_gid = get_global_id( 0 );
 
-   uint program_size = pop[(MAX_TREE_SIZE + 1) * i_gid];
-   const float* program = pop[program_size + 1];
+   uint program_size;
+   __global const uint* program;
 
    float error = 0.0f;
 
    if( i_gid < POP_SIZE )
    {
+      program_size = pop[(MAX_TREE_SIZE + 1) * i_gid];
+      program =     &pop[(MAX_TREE_SIZE + 1) * i_gid + 1];
+
       for( uint iter = 0; iter < NUM_POINTS; ++iter )
       {
          // -------------------------------

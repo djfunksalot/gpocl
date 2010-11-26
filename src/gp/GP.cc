@@ -423,8 +423,8 @@ bool GP::EvaluatePopulation( cl_uint* pop )
 #endif
    
    // ---------- begin kernel execution
-   m_queue.enqueueNDRangeKernel( m_kernel, cl::NDRange(), cl::NDRange( m_num_global_wi ), 
-                                 cl::NDRange( m_num_local_wi )
+   m_queue.enqueueNDRangeKernel( m_kernel, cl::NDRange(), 
+                                 cl::NDRange( m_num_global_wi ), cl::NDRange( m_num_local_wi )
 #ifdef PROFILING
                                  , NULL, &e_time
 #endif
@@ -646,9 +646,10 @@ void GP::BuildKernel()
    // program_src = header + kernel
    std::string program_src = 
       "#define POP_SIZE " + util::ToString( m_params->m_population_size ) + "\n" +
-      "#define MAX_TREE_SIZE " + util::ToString( MaximumTreeSize() ) + "\n" +
       "#define NUM_POINTS " + util::ToString( m_num_points ) + "\n"
       "#define X_DIM " + util::ToString( m_x_dim ) + "\n"
+      "#define MAX_TREE_SIZE " + util::ToString( MaximumTreeSize() ) + "\n" +
+      "#define MAX_FLOAT " + util::ToString( std::numeric_limits<cl_float>::max() ) + "f\n" +
       "#define TOP       ( stack[stack_top] )\n"
       "#define POP       ( stack[stack_top--] )\n"
  //     "#define PUSH( i ) ( stack[++stack_top] = (i) )\n"
