@@ -140,7 +140,7 @@ void GP::Evolve()
    } // 19
 
    // 20:
-   std::cout << "\n> Best program found: [" << m_best_error << "] ";
+   std::cout << "\n> Best program found: [" << std::setprecision(12) << m_best_error << "] ";
    PrintProgramPretty( m_best_program );
    std::cout << " [size: " << ProgramSize( m_best_program ) << "]\n";
 
@@ -528,7 +528,7 @@ bool GP::EvaluatePopulation( cl_uint* pop )
          m_best_error = m_E[i];
          Clone( Program( pop, i ), m_best_program );
 
-         std::cout << "Found better: [" << m_best_error << "] ";
+         std::cout << "Found better: [" << std::setprecision(12) << m_best_error << "] ";
          //PrintProgram( m_best_program );
          PrintProgramPretty( m_best_program );
          std::cout << " (size: " << ProgramSize( m_best_program ) << ")\n";
