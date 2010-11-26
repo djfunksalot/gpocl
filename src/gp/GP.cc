@@ -100,10 +100,13 @@ void GP::Evolve()
    */
 
 #ifndef MAPPING
-   m_E = new cl_float[ m_num_local_wi * m_params->m_population_size ];
+   // FIXME: Fix ppcu kernel (add prefix sum) to support this change
+   m_E = new cl_float[ m_params->m_population_size ];
+   //m_E = new cl_float[ m_num_local_wi * m_params->m_population_size ];
 #endif
 
-   cl_float* errors = new cl_float[ m_params->m_population_size ];
+   // FIXME: Fix ppcu kernel (add prefix sum) to support this change
+   //cl_float* errors = new cl_float[ m_params->m_population_size ];
    cl_uint* pop_a = new cl_uint[ m_params->m_population_size * MaximumProgramSize() ];
    cl_uint* pop_b = new cl_uint[ m_params->m_population_size * MaximumProgramSize() ];
 
@@ -114,7 +117,8 @@ void GP::Evolve()
    std::cout << "\n[Gen 1 of " << m_params->m_number_of_generations << "]...\n";
    InitializePopulation( cur_pop );
    // 2:
-   EvaluatePopulation( cur_pop, errors );
+   ///EvaluatePopulation( cur_pop, errors );
+   EvaluatePopulation( cur_pop );
    //std::cout << "\n";
 
    // 3:
@@ -122,9 +126,11 @@ void GP::Evolve()
    {
       std::cout << "\n[Gen " << gen << " of " << m_params->m_number_of_generations << "]...\n";
       // 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16:
-      Breed( cur_pop, tmp_pop, errors );
+      ///Breed( cur_pop, tmp_pop, errors );
+      Breed( cur_pop, tmp_pop );
       // 17:
-      if( EvaluatePopulation( tmp_pop, errors ) ) break;
+      ///if( EvaluatePopulation( tmp_pop, errors ) ) break;
+      if( EvaluatePopulation( tmp_pop ) ) break;
 
       // 18:
       std::swap( cur_pop, tmp_pop );
@@ -141,11 +147,12 @@ void GP::Evolve()
    // Clean up
    delete[] pop_a;
    delete[] pop_b;
-   delete[] errors;
+   //delete[] errors;
 }
 
 // -----------------------------------------------------------------------------
-void GP::Breed( cl_uint* old_pop, cl_uint* new_pop, const cl_float* errors )
+///void GP::Breed( cl_uint* old_pop, cl_uint* new_pop, const cl_float* errors )
+void GP::Breed( cl_uint* old_pop, cl_uint* new_pop )
 {
    // Elitism
    for( unsigned i = 0; i < m_params->m_elitism_size; ++i )
@@ -160,11 +167,11 @@ void GP::Breed( cl_uint* old_pop, cl_uint* new_pop, const cl_float* errors )
       // Genetic operations
       if( Random::Probability( m_params->m_crossover_probability ) )
          // Respectively: mom, dad, and child
-         Crossover( Program( old_pop, Tournament( old_pop, errors ) ),
-                    Program( old_pop, Tournament( old_pop, errors ) ),
+         Crossover( Program( old_pop, Tournament( old_pop ) ),
+                    Program( old_pop, Tournament( old_pop ) ),
                     Program( new_pop, i ) );
       else
-         Clone( Program( old_pop, Tournament( old_pop, errors ) ), Program( new_pop, i ) );
+         Clone( Program( old_pop, Tournament( old_pop ) ), Program( new_pop, i ) );
 
       // Every genetic operator have a chance to go wrong
       if( Random::Probability( m_params->m_mutation_probability ) )
@@ -395,7 +402,8 @@ void GP::Clone( cl_uint* program_orig, cl_uint* program_dest ) const
 }
 
 // -----------------------------------------------------------------------------
-bool GP::EvaluatePopulation( cl_uint* pop, cl_float* errors )
+///bool GP::EvaluatePopulation( cl_uint* pop, cl_float* errors )
+bool GP::EvaluatePopulation( cl_uint* pop )
 {
    // Write data to buffer (TODO: can we use mapbuffer here?)
    /* 
@@ -441,22 +449,29 @@ bool GP::EvaluatePopulation( cl_uint* pop, cl_float* errors )
    // TODO: Do I need to always Map and Unmap?
 #ifdef MAPPING
    m_E = (cl_float*) m_queue.enqueueMapBuffer( m_buf_E, CL_TRUE, 
-         CL_MAP_READ, 0, m_num_local_wi * m_params->m_population_size * sizeof(cl_float) );
+   // FIXME: Fix ppcu kernel (add prefix sum) to support this change
+         CL_MAP_READ, 0, m_params->m_population_size * sizeof(cl_float) );
+         //CL_MAP_READ, 0, m_num_local_wi * m_params->m_population_size * sizeof(cl_float) );
 #else
    m_queue.enqueueReadBuffer( m_buf_E, CL_TRUE, 0,
-         m_num_local_wi * m_params->m_population_size * sizeof(cl_float),
+   // FIXME: Fix ppcu kernel (add prefix sum) to support this change
+         m_params->m_population_size * sizeof(cl_float),
+         //m_num_local_wi * m_params->m_population_size * sizeof(cl_float),
          m_E, NULL, NULL );
 #endif
 
    // --- Fitness calculation -----------------
-   // TODO: Do this on the GPU!!
+
    for( unsigned i = 0; i < m_params->m_population_size; ++i )
    {
+   // FIXME: Fix ppcu kernel (add prefix sum) to support this change
+#if 0
       errors[i] = 0.0f;
 
 //      std::cout << "\nProgram: [" << i << "] ";
  //     PrintProgramPretty( Program( pop, i )  );
   //    std::cout << " (size: " << ProgramSize( Program( pop, i ) ) << ")\n";
+
       for( unsigned j = 0; j < m_num_local_wi; ++j )
       {
          // Sum of the squared error
@@ -487,7 +502,19 @@ bool GP::EvaluatePopulation( cl_uint* pop, cl_float* errors )
          PrintProgramPretty( m_best_program );
          std::cout << " (size: " << ProgramSize( m_best_program ) << ")\n";
       }
+#endif
+      // Check whether we have found a better solution
+      if( m_E[i] < m_best_error  ||
+         ( util::AlmostEqual( m_E[i], m_best_error ) && ProgramSize( pop, i ) < ProgramSize( m_best_program ) ) )
+      {
+         m_best_error = m_E[i];
+         Clone( Program( pop, i ), m_best_program );
 
+         std::cout << "Found better: [" << m_best_error << "] ";
+         //PrintProgram( m_best_program );
+         PrintProgramPretty( m_best_program );
+         std::cout << " (size: " << ProgramSize( m_best_program ) << ")\n";
+      }
       // TODO: Pick the best and fill the elitism vector (if any)
    }
 #ifdef MAPPING
@@ -499,14 +526,15 @@ bool GP::EvaluatePopulation( cl_uint* pop, cl_float* errors )
    
 }
 // -----------------------------------------------------------------------------
-unsigned GP::Tournament( const cl_uint* pop, const cl_float* errors ) const
+///unsigned GP::Tournament( const cl_uint* pop, const cl_float* errors ) const
+unsigned GP::Tournament( const cl_uint* pop ) const
 {
    unsigned winner = Random::Int( 0, m_params->m_population_size - 1 );
    for( unsigned t = 0; t < m_tournament_size; ++t ) 
    {
       unsigned competitor = Random::Int( 0, m_params->m_population_size - 1 );
-      if( errors[competitor] < errors[winner]
-            || ( util::AlmostEqual( errors[competitor], errors[winner] ) &&
+      if( m_E[competitor] < m_E[winner]
+            || ( util::AlmostEqual( m_E[competitor], m_E[winner] ) &&
                ProgramSize( pop, competitor ) < ProgramSize( pop, winner ) ) )
       {
          winner = competitor;
@@ -617,6 +645,7 @@ void GP::BuildKernel()
 
    // program_src = header + kernel
    std::string program_src = 
+      "#define POP_SIZE " + util::ToString( m_params->m_population_size ) + "\n" +
       "#define MAX_TREE_SIZE " + util::ToString( MaximumTreeSize() ) + "\n" +
       "#define NUM_POINTS " + util::ToString( m_num_points ) + "\n"
       "#define X_DIM " + util::ToString( m_x_dim ) + "\n"
@@ -661,13 +690,6 @@ void GP::BuildKernel()
 	std::cout << "Build Log:\t " << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(devices[0]) << std::endl;
 
    m_kernel = cl::Kernel( program, "evaluate" );
-
-   // Set kernel arguments
-   m_kernel.setArg( 0, m_buf_pop );
-   m_kernel.setArg( 1, m_buf_X );
-   m_kernel.setArg( 2, m_buf_Y );
-   m_kernel.setArg( 3, m_buf_E );
-   m_kernel.setArg( 4, sizeof(uint) * MaximumTreeSize(), NULL );
 }
 
 // -----------------------------------------------------------------------------

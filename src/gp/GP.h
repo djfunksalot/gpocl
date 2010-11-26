@@ -132,6 +132,8 @@ public:
       // Create program ("build kernel")
       BuildKernel();
 
+      SetKernelArgs();
+
       Evolve();
    }
 
@@ -185,11 +187,14 @@ protected:
 
    void SetProgramSize( cl_uint* program, unsigned size ) const { *program = size; }
 
-   bool EvaluatePopulation( cl_uint* pop, cl_float* errors );
+   ///bool EvaluatePopulation( cl_uint* pop, cl_float* errors );
+   bool EvaluatePopulation( cl_uint* pop  );
    void InitializePopulation( cl_uint* pop );
-   void Breed( cl_uint* old_pop, cl_uint* new_pop, const cl_float* );
+   ///void Breed( cl_uint* old_pop, cl_uint* new_pop, const cl_float* );
+   void Breed( cl_uint* old_pop, cl_uint* new_pop );
    void Clone( cl_uint* program_orig, cl_uint* program_dest ) const;
-   unsigned Tournament( const cl_uint* pop, const cl_float* errors ) const;
+   ///unsigned Tournament( const cl_uint* pop, const cl_float* errors ) const;
+   unsigned Tournament( const cl_uint* pop ) const;
    void Crossover( const cl_uint* mom, const cl_uint* dad, cl_uint* child ) const;
    /**
      Copy the individual @ref program_orig into @ref program_dest but
@@ -246,6 +251,15 @@ protected:
    void OpenCLInit();
    void CreateBuffers();
    void BuildKernel();
+   virtual void SetKernelArgs()
+   {
+      // Set common kernel arguments
+      m_kernel.setArg( 0, m_buf_pop );
+      m_kernel.setArg( 1, m_buf_X );
+      m_kernel.setArg( 2, m_buf_Y );
+      m_kernel.setArg( 3, m_buf_E );
+   }
+
    virtual void CalculateNDRanges() = 0;
 protected:
    // OpenCL related data
@@ -325,6 +339,7 @@ public:
 };
 
 // -----------------------------------------------------------------------------
+// FIXME: Provide a derived class for each strategy!
 class GPonGPU: public GP {
 public:
    virtual ~GPonGPU()
@@ -332,10 +347,37 @@ public:
       std::cerr << "\nCleaning GPonGPU...\n";
       //if( m_X ) delete[] m_X;
    }
+   void SetKernelArgs()
+   {
+      if( m_params->m_device == Params::DEVICE_GPU_PPCU )
+      {
+         GP::SetKernelArgs();
+         m_kernel.setArg( 4, sizeof(uint) * MaximumTreeSize(), NULL );
+      }
+   }
+
    void CalculateNDRanges() 
    {
-      // FIXME: designed for ppcu
+      switch( m_params->m_device )
+      {
+         case Params::DEVICE_GPU_FPI:
+            NDRangesFPI();
+            break;
+         case Params::DEVICE_GPU_FPC:
+            NDRangesFPC();
+            break;
+         case Params::DEVICE_GPU_PPCU:
+            NDRangesPPCU();
+            break;
+         case Params::DEVICE_GPU_PPCE:
+            NDRangesPPCE();
+            break;
+      }
+   }
 
+   // -----------
+   void NDRangesPPCU()
+   {
       if( m_num_points < m_max_wi_size )
          m_num_local_wi = m_num_points;
       else
@@ -349,6 +391,19 @@ public:
       assert( MaximumTreeSize() <= m_num_local_wi );
       assert( m_num_points % m_num_local_wi == 0 );
    }
+
+   // -----------
+   void NDRangesPPCE() 
+   {
+      // Naïve rule:
+      m_num_local_wi = m_max_wi_size;
+      m_num_global_wi = m_num_local_wi * m_params->m_population_size;
+      // Rules to better distribute the workload throughout the GPU processors
+
+   }
+
+   void NDRangesFPI() {}
+   void NDRangesFPC() {}
 
    GPonGPU( Params& p ): GP( p, CL_DEVICE_TYPE_GPU )
    {
