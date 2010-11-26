@@ -929,8 +929,8 @@ void GP::LoadPoints( std::vector<std::vector<cl_float> > & out_x )
    {
       ++cur_line;
 
-      // Skipping empty lines or lines beginning with '#'
-      if( line.empty() || line[0] == '#' ) continue;
+      // Skipping empty lines or lines beginning with '#' or '%'
+      if( line.empty() || line[0] == '#' || line[0] == '%' ) continue;
 
       std::stringstream ss( line ); std::string cell; std::vector<cl_float> v;
       while( std::getline( ss, cell, ',' ) )
