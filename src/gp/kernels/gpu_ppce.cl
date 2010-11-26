@@ -1,5 +1,3 @@
-//#pragma OPENCL EXTENSION cl_amd_printf : enable
-
 __kernel void evaluate( __global const uint* pop, __global const float* X, __global const float* Y,
                         __global float* E )
 {
@@ -12,9 +10,13 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 
    float error = 0.0f;
 
+   // This is needed because global dimension can be greater than POP_SIZE (on
+   // cases where POP_SIZE needs to be evenly divided by local work size)
    if( i_gid < POP_SIZE )
    {
+      // Get the actual program's size
       program_size = pop[(MAX_TREE_SIZE + 1) * i_gid];
+      // Make program points to the actual program being evaluated
       program =     &pop[(MAX_TREE_SIZE + 1) * i_gid + 1];
 
       for( uint iter = 0; iter < NUM_POINTS; ++iter )

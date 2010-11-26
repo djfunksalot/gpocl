@@ -1,23 +1,18 @@
 //#pragma OPENCL EXTENSION cl_amd_printf : enable
 
 __kernel void evaluate( __global const uint* pop, __global const float* X, __global const float* Y,
-                        __global float* E, __local uint* program )
+                        __global float* E )
 {
-   // TODO: remove __local uint* program
-
-   __local unsigned int program_size;
    CREATE_STACK( float, MAX_TREE_SIZE )
 
    uint g_id = get_group_id( 0 );
 
-   float partial_error = 0.0f;
-
    // Get the actual program's size
-   program_size = pop[(MAX_TREE_SIZE + 1) * g_id];
+   uint program_size = pop[(MAX_TREE_SIZE + 1) * g_id];
+   // Make program points to the actual program being evaluated
+   __global const uint* program = &pop[(MAX_TREE_SIZE + 1) * g_id + 1];
 
-   // TODO: use directly pop instead of program
-   for( uint i = 0; i < program_size; ++i )
-      program[i] = pop[(MAX_TREE_SIZE + 1) * g_id + i + 1];
+   float error = 0.0f;
 
    //printf( "[Genome size: %d]", program_size );
    for( uint iter = 0; iter < NUM_POINTS; ++iter )
@@ -34,8 +29,9 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
                PUSH( 0, X[iter * X_DIM + AS_INT( program[op] )] );
          }
       }
-      partial_error += pown( POP - Y[ iter ], 2 );
+      error += pown( POP - Y[ iter ], 2 );
    }
 
-   E[ g_id ] = partial_error;
+   // Check for inifity/NaN and then normalize the error (dividing by NUM_POINTS)
+   E[ g_id ] = ( isinf( error ) || isnan( error ) ) ? MAX_FLOAT : error / (float) NUM_POINTS;
 }
