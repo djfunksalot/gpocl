@@ -71,9 +71,9 @@ Params::ShowUsage( const char* app = "gpocl" ) const // -h or --help
    << "  -g <n>, --generations <n>\n"
    << "     number of generations, n>0 [default = 1]\n"
    << "  -s <n>, --seed <n>\n"
-   << "     GP initialization seed, n>=0 [default = 1]; 0 = random\n"
-   << "  -rs, --random-seed\n"
-   << "     use random GP seed (same as -s 0)\n"
+   << "     GP initialization seed, n>=0 [default = 0, random]\n"
+   //<< "  -rs, --random-seed\n"
+  // << "     use random GP seed (same as -s 0)\n"
    << "  -ps <n>, --population-size <n>\n"
    << "     number of individuals [default = 256]\n"
    << "  -cp <f>, --crossover-probability <f>\n"
@@ -120,8 +120,8 @@ Params::Initialize()
    Opts.Int.Add( "-g", "--generations", 1, 1, numeric_limits<int>::max() );
 
    // Seed options
-   Opts.Bool.Add( "-rs", "--random-seed" );
-   Opts.Int.Add( "-s", "--seed", 1, 0, numeric_limits<long>::max() );
+   //Opts.Bool.Add( "-rs", "--random-seed" );
+   Opts.Int.Add( "-s", "--seed", 0, 0, numeric_limits<long>::max() );
 
    Opts.Int.Add( "-ps", "--population-size", 256, 5, numeric_limits<int>::max() );
    Opts.Float.Add( "-cp", "--crossover-probability", 0.95, 0.0, 1.0 );
@@ -187,10 +187,10 @@ Params::Initialize()
    m_number_of_generations = Opts.Int.Get( "-g" );
 
    // -- Initialization seed
-   if( Opts.Bool.Get( "-rs" ) ) 
-      m_seed = 0;
-   else 
-      m_seed = Opts.Int.Get( "-s" );
+ //  if( Opts.Bool.Get( "-rs" ) ) 
+  //    m_seed = 0;
+  // else 
+   m_seed = Opts.Int.Get( "-s" );
 
    m_population_size = Opts.Int.Get( "-ps" );
    m_crossover_probability = Opts.Float.Get( "-cp" );

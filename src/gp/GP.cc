@@ -641,18 +641,25 @@ void GP::CreateBuffers()
 // -----------------------------------------------------------------------------
 void GP::BuildKernel()
 {
+   std::vector<bool> already_added( m_primitives.m_primitives.size(), false );
+
    /* To avoid redundant switch cases in the kernel, we will add only those cases clauses 
       that correspond to the subset of primitives given by the user. */
    std::string interpreter = "#define INTERPRETER_CORE";
    for( unsigned i = 0; i < m_primitives.m_primitives.size(); ++i )
       if( INDEX( m_primitives.m_primitives[i] ) != Primitives::GPT_VAR ) 
       {
-         /* TODO: Check for duplicates! The user may have given duplicated
-          * primitives (it is allowed to do that). */
-         interpreter += " case " + util::ToString( INDEX( m_primitives.m_primitives[i] ) ) + ":"
-            + "PUSH(" + util::ToString( m_primitives.DB[INDEX( m_primitives.m_primitives[i] )].arity ) 
-                      + "," + m_primitives.DB[INDEX( m_primitives.m_primitives[i] )].code + ") break;";
-            //+ "PUSH(" + m_primitives.DB[INDEX( m_primitives.m_primitives[i] )].code + ");break;";
+         /* Checking for duplicates. The user may have given duplicated
+            primitives (they are allowed to do that). */
+         if( ! already_added[INDEX( m_primitives.m_primitives[i] )] )
+         {
+            interpreter += " case " + util::ToString( INDEX( m_primitives.m_primitives[i] ) ) + ":"
+               + "PUSH(" + util::ToString( m_primitives.DB[INDEX( m_primitives.m_primitives[i] )].arity ) 
+               + "," + m_primitives.DB[INDEX( m_primitives.m_primitives[i] )].code + ") break;";
+
+            // Make this primitive as already added to the interpreter
+            already_added[INDEX( m_primitives.m_primitives[i] )] = true;
+         }
       }
    interpreter += "\n";
 
@@ -673,9 +680,9 @@ void GP::BuildKernel()
       "#define NODE program[op]\n"
       + interpreter + m_kernel_src;
 
-  // std::cerr << std::endl;
-   //std::cerr << program_src;
-  // std::cerr << std::endl;
+#ifndef NDEBUG
+   std::cout << "\nActual OpenCL kernel:\n\n" << program_src << std::endl;
+#endif
 
    //--------------------
 
@@ -697,7 +704,6 @@ void GP::BuildKernel()
 
       throw;
    }
-
 
    // FIXME:
 	std::cout << "Build Status: " << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(devices[0]) << std::endl;

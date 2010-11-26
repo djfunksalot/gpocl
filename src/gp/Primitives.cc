@@ -46,6 +46,9 @@ void Primitives::Register( cl_uint arity, const std::string& name,
                            const std::string& symbol, const std::string& code )
 {
    assert( DB.size() < 127 ); // 127 = 2^7 - 1
+   // Only accept lowercase primitives
+   assert( util::ToLower( symbol ) == symbol && util::ToLower( name ) == name );
+
    DB.push_back( Primitive( arity, name, symbol, code ) );
 }
 
@@ -119,13 +122,28 @@ void Primitives::Load( unsigned x_dim, unsigned max_gen_size, const std::string&
       per_arity[0].push_back( PackNode( 0, GPT_VAR, (cl_uint)i ) );
 
    // Adding user given primitives (functions and terminals)
-   std::stringstream ss( primitives ); std::string token;
+   std::stringstream ss( util::ToLower( primitives ) ); std::string token;
    while( std::getline( ss, token, ',' ) )
    {
       // node.first -> arity, node.second -> type
-      std::pair<cl_uint, cl_uint> node = Find( token );
-      if( node.first >= per_arity.size() ) per_arity.resize( node.first + 1 );
-      per_arity[node.first].push_back( PackNode( node.first, node.second ) );
+
+      if( token == "all" ) // mostly for testing purposes
+      {
+         for( unsigned i = 0; i < DB.size(); ++i )
+         {
+            std::pair<cl_uint, cl_uint> node = std::make_pair( DB[i].arity, i );
+
+            if( node.first >= per_arity.size() ) per_arity.resize( node.first + 1 );
+            per_arity[node.first].push_back( PackNode( node.first, node.second ) );
+         }
+      }
+      else
+      {
+         std::pair<cl_uint, cl_uint> node = Find( token );
+
+         if( node.first >= per_arity.size() ) per_arity.resize( node.first + 1 );
+         per_arity[node.first].push_back( PackNode( node.first, node.second ) );
+      }
    }
 
    // --------------- Consistence check
