@@ -41,6 +41,7 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 
       // -------------------------------
 
+      // TODO: Put the check for infinity/NaN as soon as possible
       PE[i_id] += pown( POP - Y[ iter * wg_size + i_id ], 2 );
    }
 
@@ -74,5 +75,7 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
    }
 
    // Store on the global memory (to be read by the host)
-   if( i_id == 0 ) E[g_id] = PE[0];
+   if( i_id == 0 ) 
+      // Check for inifity/NaN and then normalize the error (dividing by NUM_POINTS)
+      E[g_id] = ( isinf( PE[0] ) || isnan( PE[0] ) ) ? MAX_FLOAT : PE[0] / (float) NUM_POINTS;
 }
