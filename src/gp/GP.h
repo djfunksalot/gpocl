@@ -350,9 +350,10 @@ public:
    }
    void SetKernelArgs()
    {
+      GP::SetKernelArgs();
+
       if( m_params->m_device == Params::DEVICE_GPU_PPCU )
       {
-         GP::SetKernelArgs();
          m_kernel.setArg( 4, sizeof(uint) * MaximumTreeSize(), NULL );
       }
    }
