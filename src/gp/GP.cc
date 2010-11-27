@@ -33,7 +33,6 @@
 #include <algorithm>
 #include <cassert>
 #include <limits>
-// FIXME:
 #include <iomanip>
 
 Params* GP::m_params = 0;
@@ -469,14 +468,10 @@ bool GP::EvaluatePopulation( cl_uint* pop )
    // TODO: Do I need to always Map and Unmap?
 #ifdef MAPPING
    m_E = (cl_float*) m_queue.enqueueMapBuffer( m_buf_E, CL_TRUE, 
-   // FIXME: Fix ppcu kernel (add prefix sum) to support this change
          CL_MAP_READ, 0, m_params->m_population_size * sizeof(cl_float) );
-         //CL_MAP_READ, 0, m_num_local_wi * m_params->m_population_size * sizeof(cl_float) );
 #else
    m_queue.enqueueReadBuffer( m_buf_E, CL_TRUE, 0,
-   // FIXME: Fix ppcu kernel (add prefix sum) to support this change
          m_params->m_population_size * sizeof(cl_float),
-         //m_num_local_wi * m_params->m_population_size * sizeof(cl_float),
          m_E, NULL, NULL );
 #endif
 
@@ -547,7 +542,7 @@ void GP::OpenCLInit()
    m_max_wg_size = m_device.getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>();
    m_max_wi_size = m_device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
 
-   std::cerr << "Max CU: " << m_max_cu << " WGS: " << m_max_wg_size << " WIS[0]:" << m_max_wi_size <<  std::endl;
+   std::cout << "\nMax CU: " << m_max_cu << " WGS: " << m_max_wg_size << " WIS[0]:" << m_max_wi_size <<  std::endl;
 
 #ifdef PROFILING
    m_queue = cl::CommandQueue( m_context, m_device, CL_QUEUE_PROFILING_ENABLE );
@@ -564,18 +559,24 @@ void GP::CreateBuffers()
 
    // Buffer (memory on the device) of training points
    // TODO: I think m_X can be freed right after cl::Buffer returns. Check that!
-   std::cerr << "Trying to allocate " << sizeof( cl_float ) * m_num_points * m_x_dim << " bytes\n";
+#ifndef NDEBUG
+   std::cout << "\nTrying to allocate " << sizeof( cl_float ) * m_num_points * m_x_dim << " bytes for the input values (X)\n";
+#endif
    m_buf_X = cl::Buffer( m_context,
                          CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
                          sizeof( cl_float ) * m_num_points * m_x_dim,
                          m_X );
-   std::cerr << "Trying to allocate " << sizeof( cl_float ) * m_num_points << " bytes\n";
+#ifndef NDEBUG
+   std::cout << "Trying to allocate " << sizeof( cl_float ) * m_num_points << " bytes for the expected output values (Y)\n";
+#endif
    m_buf_Y = cl::Buffer( m_context,
                          CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
                          sizeof( cl_float ) * m_num_points, &m_Y[0] );
 
    // Buffer (memory on the device) of partial errors
-   std::cerr << "Trying to allocate " << sizeof( cl_float ) * m_num_local_wi * m_params->m_population_size << " bytes\n";
+#ifndef NDEBUG
+   std::cout << "Trying to allocate " << sizeof( cl_float ) * m_num_local_wi * m_params->m_population_size << " bytes for the prediction errors\n";
+#endif
    m_buf_E = cl::Buffer( m_context,
 #ifdef MAPPING
                          CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
@@ -595,7 +596,9 @@ void GP::CreateBuffers()
      |    first element        | second ...
   */
    // Buffer (memory on the device) of the population
-   std::cerr << "Trying to allocate " << sizeof( cl_uint ) * ( m_params->m_population_size * MaximumProgramSize() )  << " bytes\n";
+#ifndef NDEBUG
+   std::cout << "Trying to allocate " << sizeof( cl_uint ) * ( m_params->m_population_size * MaximumProgramSize() )  << " bytes for the population of programs\n";
+#endif
    m_buf_pop = cl::Buffer( m_context,
                            CL_MEM_READ_ONLY,
                            sizeof( cl_uint ) * ( m_params->m_population_size * 
@@ -671,10 +674,11 @@ void GP::BuildKernel()
       throw;
    }
 
-   // FIXME:
+#ifndef NDEBUG
 	std::cout << "Build Status: " << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(devices[0]) << std::endl;
 	std::cout << "Build Options:\t" << program.getBuildInfo<CL_PROGRAM_BUILD_OPTIONS>(devices[0]) << std::endl;
 	std::cout << "Build Log:\t " << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(devices[0]) << std::endl;
+#endif
 
    m_kernel = cl::Kernel( program, "evaluate" );
 }
