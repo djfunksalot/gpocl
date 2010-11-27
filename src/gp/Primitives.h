@@ -39,6 +39,7 @@
 #include <iostream>
 #include <vector>
 #include <cassert>
+#include <cassert>
 
 // -----------------------------------------------------------------------------
 class Primitives {
@@ -54,7 +55,7 @@ public:
 
    enum { GPT_EPHEMERAL, GPF_IDENTITY, GPT_VAR = 127 };
 public:
-//   Primitives();
+   Primitives();
 
    struct Primitive { 
       Primitive( cl_uint a, const std::string& n, const std::string& s, const std::string& c ):
@@ -74,10 +75,26 @@ public:
 
 public:
 
-   void ShowAvailablePrimitives() const { /* TODO */ }
+   void ShowAvailablePrimitives() const 
+   { 
+      std::cout << "List of available primitives (operators/operands)\n\n";
+      std::cout.fill(' ');                    // fill using # 
+      for( unsigned i = 0; i < DB.size(); ++i )
+      {
+         std::cout << "Arity: " << DB[i].arity << " | Symbol: ";
+         std::cout.width(10); 
+         std::cout << DB[i].symbol;
+         std::cout <<  " | Name: ";
+         std::cout.width(12); 
+         std::cout << DB[i].name << std::endl;
+      }
+      std::cout << "\nTo specify them, use for example: -p \"sin,cos,+,-,*,/\"\n";
+   }
+
    cl_uint RandomNode( unsigned min, unsigned max ) const;
    void Load( unsigned, unsigned, const std::string& );
 
+   bool m_need_identity;
 private:
    /**
      Try to find the corresponding primitive by name or symbol. When it finds,

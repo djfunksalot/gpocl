@@ -66,8 +66,10 @@ Params::ShowUsage( const char* app = "gpocl" ) const // -h or --help
    << "     print this help and exit\n"
    << "\n"
    << "Genetic Programming options:\n"
-   << "  -p <p1,...,pn> --primitives <p1,...,pn>\n"
+   << "  -p <p1,...,pn>, --primitives <p1,...,pn>\n"
    << "     GP primitives (operators/operands) [default = +,-,*,/]\n"
+   << "  -pp, --print-primitives\n"
+   << "     Print all available GP primitives\n"
    << "  -g <n>, --generations <n>\n"
    << "     number of generations, n>0 [default = 1]\n"
    << "  -s <n>, --seed <n>\n"
@@ -109,6 +111,7 @@ Params::Initialize()
 
    // Function/terminal sets option
    Opts.String.Add( "-p", "--primitives", "+,-,*,/" );
+   Opts.Bool.Add( "-pp", "--print-primitives" );
  //  Opts.String.Add( "-ts", "--terminal-set", "vars,c_1,c_2,c_pi,c_ephemeral" );
 
    Opts.Bool.Add( "-cpu", "--cpu" );
@@ -182,7 +185,7 @@ Params::Initialize()
 
    // -- Maximum number of generations
    m_primitives = Opts.String.Get( "-p" );
-   //m_terminal_set = Opts.String.Get( "-ts" );
+   m_print_primitives = Opts.Bool.Get( "-pp" );
 
    m_number_of_generations = Opts.Int.Get( "-g" );
 

@@ -112,6 +112,13 @@ public:
 
    void Run()
    {
+      if( m_params->m_print_primitives )
+      {
+         m_primitives.ShowAvailablePrimitives();
+
+         return;
+      }
+
       // [virtual] Load training points (CPU != GPU)
       LoadPoints();
 

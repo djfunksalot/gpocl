@@ -645,7 +645,9 @@ void GP::BuildKernel()
 
    /* To avoid redundant switch cases in the kernel, we will add only those cases clauses 
       that correspond to the subset of primitives given by the user. */
-   std::string interpreter = "#define INTERPRETER_CORE";
+   std::string interpreter = "#define INTERPRETER_CORE" + (m_primitives.m_need_identity ? 
+            " case " + util::ToString( (unsigned) Primitives::GPF_IDENTITY ) + ": PUSH(1, ARG(0)) break;" : " ");
+
    for( unsigned i = 0; i < m_primitives.m_primitives.size(); ++i )
       if( INDEX( m_primitives.m_primitives[i] ) != Primitives::GPT_VAR ) 
       {
@@ -801,6 +803,13 @@ void GP::InitializePopulation( cl_uint* pop )
 
       CreateLinearTree( ++program, tree_size );
 
+      /*
+   std::cout << "\n";
+   PrintProgramPretty( Program( pop, i ) );
+   std::cout << "\n";
+   PrintProgram( Program(pop,i) );
+   std::cout << " [size: " << ProgramSize( pop,i ) << "]\n";
+   */
 #ifdef PROFILING
       // Update the total number of nodes that are going to be evaluated (to be
       // used to calculate how many GPop/s we could achieve).
@@ -854,7 +863,7 @@ void GP::PrintNode( const cl_uint* node ) const
          std::cout << AS_FLOAT( *node ) << "";
          break;
       case Primitives::GPF_IDENTITY:
-         std::cout << "";
+         std::cout << "I";
          break;
       default:
          std::cout << m_primitives.DB[INDEX(*node)].name << "";

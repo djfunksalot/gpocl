@@ -30,36 +30,12 @@
 
 #include "../common/util/Random.h"
 
-
 // -----------------------------------------------------------------------------
-std::pair<cl_uint, cl_uint> Primitives::Find( const std::string& token )
-{
-   for( unsigned i = 0; i < DB.size(); ++i )
-      if( DB[i].name == token || DB[i].symbol == token )
-         return std::make_pair( DB[i].arity, i );
-
-   throw Error( "Unrecognized primitive: " + std::string( token ) );
-}
-
-// -----------------------------------------------------------------------------
-void Primitives::Register( cl_uint arity, const std::string& name, 
-                           const std::string& symbol, const std::string& code )
-{
-   assert( DB.size() < 127 ); // 127 = 2^7 - 1
-   // Only accept lowercase primitives
-   assert( util::ToLower( symbol ) == symbol && util::ToLower( name ) == name );
-
-   DB.push_back( Primitive( arity, name, symbol, code ) );
-}
-
-// -----------------------------------------------------------------------------
-void Primitives::Load( unsigned x_dim, unsigned max_gen_size, const std::string& primitives )
+Primitives::Primitives(): m_need_identity( false ) 
 {
    /* The first two primitives are special, they need to be the first ones. */
-   Register( 0, "ephemeral",    "",             "AS_FLOAT( NODE )" );
+   Register( 0, "ephemeral",    "ephemeral",    "AS_FLOAT( NODE )" );
    assert( GPT_EPHEMERAL == DB.size() - 1 );
-   Register( 1, "identity",     "_",            "ARG(0)" );
-   assert( GPF_IDENTITY == DB.size() - 1 );
 
    Register( 3, "if-then-else", "ite",          "ARG(0) ? ARG(1) : ARG(2)" );
 
@@ -137,9 +113,32 @@ void Primitives::Load( unsigned x_dim, unsigned max_gen_size, const std::string&
    Register( 0, "c_ln2",        "1.6931",       "M_LN2_F" );
    Register( 0, "c_ln10",       "3.3025",       "M_LN10_F" );
 */
+}
 
-   /////////////////////////////////////////////////////////////
+// -----------------------------------------------------------------------------
+std::pair<cl_uint, cl_uint> Primitives::Find( const std::string& token )
+{
+   for( unsigned i = 0; i < DB.size(); ++i )
+      if( DB[i].name == token || DB[i].symbol == token )
+         return std::make_pair( DB[i].arity, i );
 
+   throw Error( "Unrecognized primitive: " + std::string( token ) );
+}
+
+// -----------------------------------------------------------------------------
+void Primitives::Register( cl_uint arity, const std::string& name, 
+                           const std::string& symbol, const std::string& code )
+{
+   assert( DB.size() < 127 ); // 127 = 2^7 - 1
+   // Only accept lowercase primitives
+   assert( util::ToLower( symbol ) == symbol && util::ToLower( name ) == name );
+
+   DB.push_back( Primitive( arity, name, symbol, code ) );
+}
+
+// -----------------------------------------------------------------------------
+void Primitives::Load( unsigned x_dim, unsigned max_gen_size, const std::string& primitives )
+{
    std::vector<std::vector<cl_uint> > per_arity;
 
    // Adding all problem variables (arity = 0)
@@ -173,15 +172,24 @@ void Primitives::Load( unsigned x_dim, unsigned max_gen_size, const std::string&
    }
 
    // --------------- Consistence check
-   if( per_arity.size() > 1 )
+   /*
+      per_arity.size() == 1 means that we have only terminals (per_arity[0])
+      per_arity.size() == 2 means that we have terminals and functions of one
+         argument (per_arity[1])
+      per_arity.size() == n (with n>2) means that we have terminals and
+        functions. We can guarantee that we have a function requiring 'n'
+        arguments, but we cannot guarantee that we have functions requiring less
+        than 'n' arguments.
+    */
+   if( per_arity.size() > 2 )
    {
    /*
       In order to initialize a linear tree of exactly a given size we need to have
-      at least an operator requiring *one* argument. If the user didn't give this
+      at least one operator requiring *one* argument. If the user didn't give this
       type of operator, we resort to a fake one-argument function called "identity".
       This function, as one can guess, just returns the value of its operator.
     */
-      if( per_arity[1].empty() ) per_arity[1].push_back( PackNode( 1, GPF_IDENTITY ) );
+      if( per_arity[1].empty() ) m_need_identity = true;
    }
    else if( per_arity.size() == 1 && max_gen_size > 1 )
    {
@@ -212,12 +220,14 @@ void Primitives::Load( unsigned x_dim, unsigned max_gen_size, const std::string&
          m_primitives_boundaries[i].second = m_primitives.size() - 1;
       }
       else
+         /* When GPF_IDENTITY is needed then its boundaries (as below) are meaningless. */
          m_primitives_boundaries[i] = m_primitives_boundaries[i - 1];
    }
 
    // Fill m_max_arity
    m_max_arity = per_arity.size() - 1;
 
+#ifndef NDEBUG
    // ----------------------------------------------
    std::cout << std::endl;
    for( int i = 0; i < m_primitives.size(); ++i )
@@ -230,15 +240,34 @@ void Primitives::Load( unsigned x_dim, unsigned max_gen_size, const std::string&
    {
       std::cout << "Boundaries " << i << " : " << m_primitives_boundaries[i].first << "," << m_primitives_boundaries[i].second << std::endl;
    }
+#endif
 }
 
 // -----------------------------------------------------------------------------
 cl_uint Primitives::RandomNode( unsigned min, unsigned max ) const
 {
-   // TODO: if min == max == 1 and the user didn't give a function requiring
-   // one argument, then return GPF_IDENTITY. (what about removing GPF_IDENTITY
-   // from DB? We need, however, to ensure that the interpreter will handle it
-   // Plus print it correctly (see PrintProgram)
+   if( m_need_identity && (min == 1) )
+   {
+      if( max == 1 ) 
+      {
+         /*
+            There isn't originally a function of one argument, the user didn't give us.
+            But we need exactly a function of *one* argument. So we are going to use
+            the "fake" identity function, which just returns the value of its operand.
+          */
+         return PackNode( 1, GPF_IDENTITY );
+      }
+      else 
+      {
+         /*
+            Hmmm... GP needs a function of *one* or *more* arguments. Since we only
+            use GPF_IDENTITY when it is really necessary, we will increment 'min' so
+            that Random will avoid choosing a non existent function of one argument.
+            At this point there is only the fake GPF_IDENTITY as one argument function. 
+          */
+         ++min;
+      }
+   }
 
    // Truncate to m_max_arity if necessary
    max = std::min( m_max_arity, max );

@@ -82,7 +82,7 @@ public:
    int m_cpu_cores;
 
    std::string m_primitives; /**< function and terminal set. */
-   //std::string m_terminal_set; /**< terminal set. */
+   bool m_print_primitives;
 
    // Genetic Programming options.
    int m_population_size; /**< Population size */
