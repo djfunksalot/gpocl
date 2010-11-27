@@ -82,7 +82,7 @@ public:
 
    virtual ~PPCE() {}
 
-   void PrintStrategy() const { GPonGPU::PrintStrategy(); std::cout << "PPC#"; }
+   void PrintStrategy() const { GPonGPU::PrintStrategy(); std::cout << "PPCE"; }
 
    void CalculateNDRanges();
 };

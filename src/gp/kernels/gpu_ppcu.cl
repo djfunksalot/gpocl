@@ -42,7 +42,8 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 
       PE[lo_id] += pown( POP - Y[ iter * WGS + lo_id ], 2 );
 
-      // Avoid further calculations if the current one has overflown the float.
+      // Avoid further calculations if the current one has overflown the float
+      // (i.e., it is inf or NaN).
       if( ! isnormal( PE[lo_id] ) ) break;
    }
 

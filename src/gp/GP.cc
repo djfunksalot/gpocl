@@ -139,9 +139,10 @@ void GP::Evolve()
    } // 19
 
    // 20:
-   std::cout << "\n> Best program found: [" << std::setprecision(12) << m_best_error << "] ";
+   std::cout << "\n> Best: [" << std::setprecision(12) << m_best_error << "]\t{" 
+      << ProgramSize( m_best_program ) << "}\t";
    PrintProgramPretty( m_best_program );
-   std::cout << " [size: " << ProgramSize( m_best_program ) << "]\n";
+   std::cout << std::endl;
 
 #ifdef PROFILING
    std::cout << std::setprecision(2) << std::fixed << "\n> GPop/s: " << m_node_evaluations / (m_kernel_time/1.0E9) << std::setprecision(4) << " | Node evals: " << m_node_evaluations << " | Avg. KET: " << m_kernel_time / (m_kernel_calls * 1.0E6) << "ms | Avg. KLT: " << m_launch_time / (m_kernel_calls * 1.0E6) << "ms | Acc. KET: " << m_kernel_time/1.0E+9 << "s | Acc. KLT: " << m_launch_time/1.0E+9 << "s | Kernel calls: " << m_kernel_calls << "\n";
@@ -486,10 +487,10 @@ bool GP::EvaluatePopulation( cl_uint* pop )
          m_best_error = m_E[i];
          Clone( Program( pop, i ), m_best_program );
 
-         std::cout << "Found better: [" << std::setprecision(12) << m_best_error << "] ";
-         //PrintProgram( m_best_program );
+         std::cout << "Evolved: [" << std::setprecision(12) << m_best_error << "]\t{" 
+                   << ProgramSize( m_best_program ) << "}\t";
          PrintProgramPretty( m_best_program );
-         std::cout << " (size: " << ProgramSize( m_best_program ) << ")\n";
+         std::cout << std::endl;
       }
       // TODO: Pick the best and fill the elitism vector (if any)
    }

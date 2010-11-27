@@ -3,7 +3,7 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 {
    CREATE_STACK( float, MAX_TREE_SIZE );
 
-   uint i_gid = get_global_id( 0 );
+   uint gl_id = get_global_id( 0 );
 
    uint program_size;
    __global const uint* program;
@@ -12,12 +12,12 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 
    // This is needed because global dimension can be greater than POP_SIZE (on
    // cases where POP_SIZE needs to be evenly divided by local work size)
-   if( i_gid < POP_SIZE )
+   if( gl_id < POP_SIZE )
    {
       // Get the actual program's size
-      program_size = pop[(MAX_TREE_SIZE + 1) * i_gid];
+      program_size = pop[(MAX_TREE_SIZE + 1) * gl_id];
       // Make program points to the actual program being evaluated
-      program =     &pop[(MAX_TREE_SIZE + 1) * i_gid + 1];
+      program =     &pop[(MAX_TREE_SIZE + 1) * gl_id + 1];
 
       for( uint iter = 0; iter < NUM_POINTS; ++iter )
       {
@@ -35,9 +35,13 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
          // -------------------------------
 
          error += pown( POP - Y[ iter ], 2 );
+
+         // Avoid further calculations if the current one has overflown the
+         // float (i.e., it is inf or NaN).
+         if( ! isnormal( error ) ) { error = MAX_FLOAT; break; }
       }
 
-      // Check for inifity/NaN and then normalize the error (dividing by NUM_POINTS)
-      E[ i_gid ] = ( isinf( error ) || isnan( error ) ) ? MAX_FLOAT : error / (float) NUM_POINTS;
+      // Store on the global memory (to be read by the host)
+      E[gl_id] = error;
    }
 }
