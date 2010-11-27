@@ -61,7 +61,7 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 
          // Fetch the errors from all the others work-items and store the sum in E[p]
          // FIXME (just to test, storing error only for point 0)
-         if( gl_id == 0 ) E[p] = isnormal( error ) ? error : MAX_FLOAT;
+         if( gl_id == 0 ) E[p] = ( isinf( error ) || isnan( error ) ) ? MAX_FLOAT : error;
       }
    }
 }

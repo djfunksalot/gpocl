@@ -1,4 +1,4 @@
-//#pragma OPENCL EXTENSION cl_amd_printf : enable
+#pragma OPENCL EXTENSION cl_amd_printf : enable
 
 __kernel void evaluate( __global const uint* pop, __global const float* X, __global const float* Y,
                         __global float* E )
@@ -33,7 +33,7 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 
       // Avoid further calculations if the current one has overflown the float
       // (i.e., it is inf or NaN).
-      if( ! isnormal( error ) ) { error = MAX_FLOAT; break; }
+      if( isinf( error ) || isnan( error ) ) { error = MAX_FLOAT; break; }
    }
 
    // Store on the global memory (to be read by the host)

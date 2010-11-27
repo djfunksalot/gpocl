@@ -53,7 +53,7 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 
       // Avoid further calculations if the current one has overflown the float
       // (i.e., it is inf or NaN).
-      if( ! isnormal( PE[lo_id] ) ) break;
+      if( isinf( PE[lo_id] ) || isnan( PE[lo_id] ) ) break;
    }
 
    /*
@@ -88,5 +88,5 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
    // Store on the global memory (to be read by the host)
    if( lo_id == 0 ) 
       // Check for infinity/NaN
-      E[gr_id] = isnormal( PE[0] ) ? PE[0] : MAX_FLOAT;
+      E[gr_id] = ( isinf( PE[0] ) || isnan( PE[0] ) ) ? MAX_FLOAT : PE[0];
 }
