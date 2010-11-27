@@ -61,6 +61,13 @@ public:
 
    void PrintStrategy() const { GPonGPU::PrintStrategy(); std::cout << "PPCU"; }
 
+   void SetKernelArgs()
+   {
+      GP::SetKernelArgs();
+
+      m_kernel.setArg( 4, sizeof(uint) * MaximumTreeSize(), NULL );
+   }
+
    void CalculateNDRanges(); 
 };
 
