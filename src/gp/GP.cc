@@ -610,7 +610,7 @@ void GP::BuildKernel()
    /* To avoid redundant switch cases in the kernel, we will add only those cases clauses 
       that correspond to the subset of primitives given by the user. */
    std::string interpreter = "#define INTERPRETER_CORE" + (m_primitives.m_need_identity ? 
-            " case " + util::ToString( (unsigned) Primitives::GPF_IDENTITY ) + ": PUSH(1, ARG(0)) break;" : " ");
+            " case " + util::ToString( (unsigned) Primitives::GPF_IDENTITY ) + ": PUSH(1,ARG(0)) break;" : " ");
 
    for( unsigned i = 0; i < m_primitives.m_primitives.size(); ++i )
       if( INDEX( m_primitives.m_primitives[i] ) != Primitives::GPT_VAR ) 

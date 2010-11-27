@@ -53,7 +53,7 @@ public:
       Error( const std::string& msg ): Exception( "@ Primitives ", msg ) {};
    };
 
-   enum { GPT_EPHEMERAL, GPF_IDENTITY, GPT_VAR = 127 };
+   enum { GPT_EPHEMERAL, GPF_IDENTITY = 126, GPT_VAR = 127 };
 public:
    Primitives();
 

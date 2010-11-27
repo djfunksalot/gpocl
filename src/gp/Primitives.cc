@@ -129,7 +129,7 @@ std::pair<cl_uint, cl_uint> Primitives::Find( const std::string& token )
 void Primitives::Register( cl_uint arity, const std::string& name, 
                            const std::string& symbol, const std::string& code )
 {
-   assert( DB.size() < 127 ); // 127 = 2^7 - 1
+   assert( DB.size() < 126 ); // '127 = 2^7 - (1 + 1)', 1 for GPT_VAR and 1 for GPF_IDENTITY
    // Only accept lowercase primitives
    assert( util::ToLower( symbol ) == symbol && util::ToLower( name ) == name );
 
