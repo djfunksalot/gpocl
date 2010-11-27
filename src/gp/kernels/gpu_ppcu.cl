@@ -1,26 +1,18 @@
 //#pragma OPENCL EXTENSION cl_amd_printf : enable
 
 __kernel void evaluate( __global const uint* pop, __global const float* X, __global const float* Y,
-                        __global float* E, __local uint* program )
+                        __global float* E )
 {
    __local float PE[WGS];
 
-   __local unsigned int program_size;
    CREATE_STACK( float, MAX_TREE_SIZE );
 
    uint lo_id = get_local_id( 0 );
    uint gr_id = get_group_id( 0 );
 
    // Get the actual program's size
-   if( lo_id == 0 ) program_size = pop[(MAX_TREE_SIZE + 1) * gr_id];
-
-   barrier(CLK_LOCAL_MEM_FENCE);
-
-   // FIXME: manage cases where program_size > work_group_size (each work-item
-   // will need to handle more than one index.
-   if( lo_id < program_size ) program[lo_id] = pop[(MAX_TREE_SIZE + 1) * gr_id + lo_id + 1];
-
-   barrier(CLK_LOCAL_MEM_FENCE);
+   uint program_size = pop[(MAX_TREE_SIZE + 1) * gr_id];
+   __global const uint* program = &pop[(MAX_TREE_SIZE + 1) * gr_id + 1];
 
    PE[lo_id] = 0.0f;
 
