@@ -102,6 +102,9 @@ void FPI::CalculateNDRanges()
          (unsigned) m_max_wi_size );
    // Make m_num_global_wi be divisible by m_num_local_wi
    m_num_global_wi = m_num_points + m_num_local_wi - (m_num_points % m_num_local_wi); 
+
+   if( MaximumTreeSize() <= m_num_local_wi )
+      m_compile_flags += "-D MAX_TREE_SIZE_IS_LESS_THAN_WGS";
 }
 
 // -----------------------------------------------------------------------------
