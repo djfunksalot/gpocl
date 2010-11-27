@@ -32,7 +32,7 @@ ELSE( OPENCL_HAS_CPP_BINDINGS )
 	MESSAGE( ">  No OpenCL C++ bindings found" )
 ENDIF( OPENCL_HAS_CPP_BINDINGS )
 
-ADD_EXECUTABLE( gpocl gpocl.cc Params.cc GP.cc Primitives.cc )
+ADD_EXECUTABLE( gpocl gpocl.cc Params.cc GP.cc Primitives.cc CPU.cc GPU.cc )
 
 # Link the executable to the GP and OpenCL library.
 TARGET_LINK_LIBRARIES( gpocl Util ${OPENCL_LIBRARIES} )

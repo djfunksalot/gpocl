@@ -208,6 +208,7 @@ void GP::Breed( cl_uint* old_pop, cl_uint* new_pop )
    }
 }
 
+// -----------------------------------------------------------------------------
 void GP::Crossover( const cl_uint* mom, const cl_uint* dad, cl_uint* child ) const
 {
    assert( mom != NULL && dad != NULL && child != NULL && child != mom && child != dad );
@@ -335,6 +336,7 @@ void GP::NodeMutate( cl_uint* program ) const
                                                       ARITY( program[mutation_point] ) );
 }
 
+// -----------------------------------------------------------------------------
 void GP::CopySubTreeMutate( const cl_uint* program_orig, cl_uint* program_dest ) const
 {
 #define CAN_CHANGE_ORIGINAL_SIZE 1
@@ -482,45 +484,6 @@ bool GP::EvaluatePopulation( cl_uint* pop )
 
    for( unsigned i = 0; i < m_params->m_population_size; ++i )
    {
-   // FIXME: Fix ppcu kernel (add prefix sum) to support this change
-#if 0
-      errors[i] = 0.0f;
-
-//      std::cout << "\nProgram: [" << i << "] ";
- //     PrintProgramPretty( Program( pop, i )  );
-  //    std::cout << " (size: " << ProgramSize( Program( pop, i ) ) << ")\n";
-
-      for( unsigned j = 0; j < m_num_local_wi; ++j )
-      {
-         // Sum of the squared error
-   //      std::cout << std::setprecision(16) << "[" << m_E[i * m_num_local_wi + j] << ", " << errors[i] << "]";
-         errors[i] += m_E[ i * m_num_local_wi + j ];
-      }
-    //  std::cout << "\n";
-
-      if( isinf( errors[i] ) || isnan( errors[i] ) )
-      {
-         // Set the worst error possible
-         errors[i] = std::numeric_limits<cl_float>::max();
-
-         continue;
-      } else
-         errors[i] /= m_num_points; // take the mean
-
-
-      // Check whether we have found a better solution
-      if( errors[i] < m_best_error  ||
-         ( util::AlmostEqual( errors[i], m_best_error ) && ProgramSize( pop, i ) < ProgramSize( m_best_program ) ) )
-      {
-         m_best_error = errors[i];
-         Clone( Program( pop, i ), m_best_program );
-
-         std::cout << "Found better: [" << m_best_error << "] ";
-         //PrintProgram( m_best_program );
-         PrintProgramPretty( m_best_program );
-         std::cout << " (size: " << ProgramSize( m_best_program ) << ")\n";
-      }
-#endif
       // Check whether we have found a better solution
       if( m_E[i] < m_best_error  ||
          ( util::AlmostEqual( m_E[i], m_best_error ) && ProgramSize( pop, i ) < ProgramSize( m_best_program ) ) )
@@ -543,6 +506,7 @@ bool GP::EvaluatePopulation( cl_uint* pop )
    return (m_best_error <= m_params->m_error_tolerance);
    
 }
+
 // -----------------------------------------------------------------------------
 ///unsigned GP::Tournament( const cl_uint* pop, const cl_float* errors ) const
 unsigned GP::Tournament( const cl_uint* pop ) const
@@ -716,71 +680,6 @@ void GP::BuildKernel()
 }
 
 // -----------------------------------------------------------------------------
-GPonCPU::GPonCPU( Params& p ): GP( p, CL_DEVICE_TYPE_CPU )
-{
-   // FIXME: (AMD only!) Use the more portable Fission (from cl_ext.h) instead!
-   if( m_params->m_cpu_cores > 0 )
-   {
-      /* FIXME: putenv should accept const char* as argument!
-      const std::string env = "CPU_MAX_COMPUTE_UNITS=" + util::ToString( m_params->m_cpu_cores );
-      putenv( env.c_str() );
-      */
-      setenv( "CPU_MAX_COMPUTE_UNITS", util::ToString( m_params->m_cpu_cores ).c_str(), 1 );
-   }
-
-   LoadKernel( "kernels/common.cl" );
-   LoadKernel( "kernels/cpu.cl" );
-}
-
-// -----------------------------------------------------------------------------
-void GPonCPU::LoadPoints()
-{
-   // GP::LoadPoints( m_points );
-   std::vector<std::vector<cl_float> > tmp_X;
-   GP::LoadPoints( tmp_X );
-
-   // Allocate enough memory (linear) to hold the linear version
-   m_X = new cl_float[ m_num_points * m_x_dim ];
-
-   // Linearization
-   unsigned pos = 0;
-   for( unsigned i = 0; i < tmp_X.size(); ++i )
-      for( unsigned j = 0; j < tmp_X[0].size(); ++j )
-         m_X[pos++] = tmp_X[i][j];
-
-   /*
-   for( unsigned i = 0; i < m_num_points * m_x_dim; ++i)
-      std::cout << m_X[i] << " ";
-   for( unsigned i = 0; i < m_num_points; ++i)
-      std::cout << m_Y[i] << " ";
-    */
-}
-
-// -----------------------------------------------------------------------------
-void GPonGPU::LoadPoints()
-{
-   std::vector<std::vector<cl_float> > tmp_X;
-   GP::LoadPoints( tmp_X );
-
-   // Allocate enough memory (linear) to hold the transposed version
-   m_X = new cl_float[ m_num_points * m_x_dim ];
-
-   // Transposition
-   // TODO: Acrescentar gráfico explicativo!
-   unsigned pos = 0;
-   for( unsigned j = 0; j < tmp_X[0].size(); ++j )
-      for( unsigned i = 0; i < tmp_X.size(); ++i )
-         m_X[pos++] = tmp_X[i][j];
-/*
-   for( unsigned i = 0; i < m_num_points * m_x_dim; ++i)
-      std::cout << m_X[i] << " ";
-   for( unsigned i = 0; i < m_num_points; ++i)
-      std::cout << m_Y[i] << " ";
- */
-}
-
-
-// -----------------------------------------------------------------------------
 void GP::LoadKernel( const char* kernel_file )
 {
    std::ifstream file( kernel_file );
@@ -824,6 +723,7 @@ void GP::PrintProgram( const cl_uint* program ) const
    PrintTree( program + 1 );
 }
 
+// -----------------------------------------------------------------------------
 void GP::PrintProgramPretty( const cl_uint* program, int start, int end ) const
 {
    if( (start == -1) || (end == -1) ) { start = 0; end = ProgramSize( program++ ) - 1; }
@@ -852,6 +752,7 @@ void GP::PrintProgramPretty( const cl_uint* program, int start, int end ) const
    return;
 }
 
+// -----------------------------------------------------------------------------
 void GP::PrintNode( const cl_uint* node ) const
 {
    switch( INDEX( *node ) )
@@ -870,6 +771,7 @@ void GP::PrintNode( const cl_uint* node ) const
    }
 }
 
+// -----------------------------------------------------------------------------
 void GP::PrintTree( const cl_uint* node ) const
 {
    int sum = 0;
@@ -988,3 +890,5 @@ void GP::LoadPoints( std::vector<std::vector<cl_float> > & out_x )
 
    m_num_points = out_x.size();
 }
+
+// -----------------------------------------------------------------------------

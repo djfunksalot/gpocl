@@ -27,6 +27,8 @@
 #include "Params.h"
 
 #include "GP.h"
+#include "CPU.h"
+#include "GPU.h"
 
 #include "../common/Exception.h"
 #include "../common/util/CmdLineException.h"
