@@ -18,7 +18,14 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 
    // FIXME: manage cases where program_size > work_group_size (each work-item
    // will need to handle more than one index.
-   if( lo_id < program_size ) program[lo_id] = pop[(MAX_TREE_SIZE + 1) * gr_id + lo_id + 1];
+   ///if( lo_id < program_size ) program[lo_id] = pop[(MAX_TREE_SIZE + 1) * gr_id + lo_id + 1];
+   
+   uint rounds = ceil( program_size / (float) WGS );
+   for( uint i = 0; i < rounds; ++i )
+   {
+      if( i * rounds + lo_id < program_size )
+         program[i * rounds + lo_id] = pop[(MAX_TREE_SIZE + 1) * gr_id + (i * rounds + lo_id) + 1];
+   } 
 
    barrier(CLK_LOCAL_MEM_FENCE);
 

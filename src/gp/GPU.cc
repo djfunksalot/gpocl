@@ -64,7 +64,7 @@ void PPCU::CalculateNDRanges()
    // FIXME: Remove these restrictions! (need to change the kernel)
    // For now, m_num_local_wi must be power of two; let's check it:
    assert( ((int)m_num_local_wi & -(int)m_num_local_wi) == (int)m_num_local_wi );
-   assert( MaximumTreeSize() <= m_num_local_wi );
+   //assert( MaximumTreeSize() <= m_num_local_wi );
    assert( m_num_points % m_num_local_wi == 0 );
 }
 
