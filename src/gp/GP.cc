@@ -144,7 +144,7 @@ void GP::Evolve()
    std::cout << " [size: " << ProgramSize( m_best_program ) << "]\n";
 
 #ifdef PROFILING
-   std::cout << "\n> GPop/s: " << m_node_evaluations / (m_kernel_time/1.0E9) << " | Node evals: " << m_node_evaluations << " | Avg. KET: " << m_kernel_time / (m_kernel_calls * 1.0E6) << "ms | Avg. KLT: " << m_launch_time / (m_kernel_calls * 1.0E6) << "ms | Acc. KET: " << m_kernel_time/1.0E+9 << "s | Acc. KLT: " << m_launch_time/1.0E+9 << "s | Kernel calls: " << m_kernel_calls << "\n";
+   std::cout << std::setprecision(2) << std::fixed << "\n> GPop/s: " << m_node_evaluations / (m_kernel_time/1.0E9) << std::setprecision(4) << " | Node evals: " << m_node_evaluations << " | Avg. KET: " << m_kernel_time / (m_kernel_calls * 1.0E6) << "ms | Avg. KLT: " << m_launch_time / (m_kernel_calls * 1.0E6) << "ms | Acc. KET: " << m_kernel_time/1.0E+9 << "s | Acc. KLT: " << m_launch_time/1.0E+9 << "s | Kernel calls: " << m_kernel_calls << "\n";
 #endif
    std::cout << "> Strategy: "; PrintStrategy(); std::cout << "\n";
 

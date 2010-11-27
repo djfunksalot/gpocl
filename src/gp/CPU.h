@@ -44,7 +44,7 @@ public:
    }
 
    void PrintStrategy() const { std::cout << "CPU (" << m_max_cu << " compute units)"; }
-   virtual ~GPonCPU() { std::cerr << "\nCleaning GPonCPU...\n"; }
+   virtual ~GPonCPU() {}
 
    void LoadPoints();
 };

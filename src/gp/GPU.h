@@ -38,10 +38,7 @@ public:
       LoadKernel( "kernels/common.cl" );
    }
 
-   virtual ~GPonGPU()
-   {
-      std::cerr << "\nCleaning GPonGPU...\n";
-   }
+   virtual ~GPonGPU() {}
 
    void PrintStrategy() const 
    { 
@@ -60,7 +57,7 @@ public:
       LoadKernel( "kernels/gpu_ppcu.cl" );
    }
 
-   virtual ~PPCU() { std::cerr << "\nCleaning PPCU...\n"; }
+   virtual ~PPCU() {}
 
    void PrintStrategy() const { GPonGPU::PrintStrategy(); std::cout << "PPCU"; }
 
@@ -83,7 +80,7 @@ public:
       LoadKernel( "kernels/gpu_ppce.cl" );
    }
 
-   virtual ~PPCE() { std::cerr << "\nCleaning PPCE...\n"; }
+   virtual ~PPCE() {}
 
    void PrintStrategy() const { GPonGPU::PrintStrategy(); std::cout << "PPC#"; }
 
@@ -99,7 +96,7 @@ public:
       LoadKernel( "kernels/gpu_fpi.cl" );
    }
 
-   virtual ~FPI() { std::cerr << "\nCleaning FPI...\n"; }
+   virtual ~FPI() {}
 
    void PrintStrategy() const { GPonGPU::PrintStrategy(); std::cout << "FPI"; }
 
@@ -115,7 +112,7 @@ public:
       LoadKernel( "kernels/gpu_fpc.cl" );
    }
 
-   virtual ~FPC() { std::cerr << "\nCleaning FPC...\n"; }
+   virtual ~FPC() {}
 
    void PrintStrategy() const { GPonGPU::PrintStrategy(); std::cout << "FPC"; }
 

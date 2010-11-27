@@ -102,7 +102,6 @@ public:
    GP( Params& p, cl_device_type );
    virtual ~GP() 
    { 
-      std::cerr << "\nCleaning GP base...\n"; 
       if( m_X ) delete[] m_X;
 #ifndef MAPPING
       if( m_E ) delete[] m_E;
