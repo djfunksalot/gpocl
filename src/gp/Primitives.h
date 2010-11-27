@@ -95,6 +95,7 @@ public:
    void Load( unsigned, unsigned, const std::string& );
 
    bool m_need_identity;
+   unsigned m_max_arity;
 private:
    /**
      Try to find the corresponding primitive by name or symbol. When it finds,
@@ -104,7 +105,6 @@ private:
    void Register( cl_uint, const std::string&, const std::string&, const std::string& );
 
    std::vector<std::pair<unsigned, unsigned> > m_primitives_boundaries;
-   unsigned m_max_arity;
 
 private:
    // --------------

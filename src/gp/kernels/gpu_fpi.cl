@@ -4,7 +4,7 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
                         __global float* E, __local uint* program )
 {
    __local uint program_size;
-   CREATE_STACK( float, MAX_TREE_SIZE );
+   CREATE_STACK
 
    uint gl_id = get_global_id( 0 );
    uint lo_id = get_local_id( 0 );

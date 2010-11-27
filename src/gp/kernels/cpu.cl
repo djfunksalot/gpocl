@@ -3,7 +3,7 @@
 __kernel void evaluate( __global const uint* pop, __global const float* X, __global const float* Y,
                         __global float* E )
 {
-   CREATE_STACK( float, MAX_TREE_SIZE )
+   CREATE_STACK
 
    uint gr_id = get_group_id( 0 );
 

@@ -6,7 +6,8 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
    __local float PE[WGS];
 
    __local unsigned int program_size;
-   CREATE_STACK( float, MAX_TREE_SIZE );
+
+   CREATE_STACK
 
    uint lo_id = get_local_id( 0 );
    uint gr_id = get_group_id( 0 );

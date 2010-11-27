@@ -633,6 +633,23 @@ void GP::BuildKernel()
       }
    interpreter += "\n";
 
+   /*
+      In practice we don't need 'max_stack_size' to be equal to 'MaximumTreeSize()',
+      we can lower this and then save memory on the device. The formula below give us
+      the upper bound for stack use:
+
+                               |            MTS            |
+            stack size = MTS - |  -----------------------  |
+                               |       /              \    |
+                               |   min|  arity   , MTS |   |
+                               |_      \     max      /   _|
+
+            where MTS is MaximumTreeSize().
+    */
+
+   unsigned max_stack_size = (unsigned) MaximumTreeSize() - 
+      std::floor(MaximumTreeSize() / (float) std::min( m_primitives.m_max_arity, MaximumTreeSize() ) );
+
    // program_src = header + kernel
    std::string program_src = 
       "#define WGS " + util::ToString( m_num_local_wi ) + "\n" +
@@ -646,7 +663,8 @@ void GP::BuildKernel()
  //     "#define PUSH( i ) ( stack[++stack_top] = (i) )\n"
       "#define PUSH(arity, exp) stack[stack_top + 1 - arity] = (exp); stack_top = stack_top + 1 - arity;\n"
       "#define ARG(n) (stack[stack_top - n])\n"
-      "#define CREATE_STACK( type, size ) type stack[size]; int stack_top = -1;\n"
+      "#define STACK_SIZE " + util::ToString( max_stack_size ) + "\n" +
+      "#define CREATE_STACK float stack[STACK_SIZE]; int stack_top = -1;\n"
       "#define NODE program[op]\n"
       + interpreter + m_kernel_src;
 
