@@ -663,7 +663,7 @@ void GP::BuildKernel()
    // TODO: currently not elegant!
    std::vector<cl::Device> devices; devices.push_back( m_device );
    try {
-      program.build( devices );
+      program.build( devices, m_compile_flags.c_str() );
    } catch( cl::Error& e ) {
       if( e.err() == CL_BUILD_PROGRAM_FAILURE )
       {

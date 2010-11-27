@@ -292,6 +292,7 @@ protected:
    size_t m_num_global_wi;
    size_t m_num_local_wi;
 
+   std::string m_compile_flags;
 #ifdef PROFILING
    cl_ulong m_kernel_time;
    cl_ulong m_launch_time;

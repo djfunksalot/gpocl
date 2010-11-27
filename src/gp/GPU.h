@@ -100,7 +100,7 @@ public:
 
    void PrintStrategy() const { GPonGPU::PrintStrategy(); std::cout << "FPI"; }
 
-   void CalculateNDRanges() {}
+   void CalculateNDRanges();
 };
 
 // -----------------------------------------------------------------------------

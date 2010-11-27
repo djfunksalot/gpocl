@@ -61,10 +61,12 @@ void PPCU::CalculateNDRanges()
    // One individual por each group
    m_num_global_wi = m_num_local_wi * m_params->m_population_size;
 
+   if( MaximumTreeSize() <= m_num_local_wi )
+      m_compile_flags += "-D MAX_TREE_SIZE_IS_LESS_THAN_WGS";
+
    // FIXME: Remove these restrictions! (need to change the kernel)
    // For now, m_num_local_wi must be power of two; let's check it:
    assert( ((int)m_num_local_wi & -(int)m_num_local_wi) == (int)m_num_local_wi );
-   //assert( MaximumTreeSize() <= m_num_local_wi );
    assert( m_num_points % m_num_local_wi == 0 );
 }
 
@@ -90,6 +92,16 @@ void PPCE::CalculateNDRanges()
    }
 
    // Rules to better distribute the workload throughout the GPU processors
+}
+
+// -----------------------------------------------------------------------------
+void FPI::CalculateNDRanges() 
+{
+   // Distribute the points (workload) evenly among the compute units
+   m_num_local_wi = std::min( (unsigned) std::ceil( m_num_points / m_max_cu ),
+         (unsigned) m_max_wi_size );
+   // Make m_num_global_wi be divisible by m_num_local_wi
+   m_num_global_wi = m_num_points + m_num_local_wi - (m_num_points % m_num_local_wi); 
 }
 
 // -----------------------------------------------------------------------------
