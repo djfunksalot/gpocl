@@ -49,4 +49,47 @@ void GPonGPU::LoadPoints()
  */
 }
 
+// -----------------------------------------------------------------------------
+void PPCU::CalculateNDRanges() 
+{
+   if( m_num_points < m_max_wi_size )
+      m_num_local_wi = m_num_points;
+   else
+      m_num_local_wi = m_max_wi_size;
 
+   // FIXME: m_num_global_wi % m_num_local_wi
+   // One individual por each group
+   m_num_global_wi = m_num_local_wi * m_params->m_population_size;
+
+   // FIXME: Remove these restrictions! (need to change the kernel)
+   // For now, m_num_local_wi must be power of two; let's check it:
+   assert( ((int)m_num_local_wi & -(int)m_num_local_wi) == (int)m_num_local_wi );
+   assert( MaximumTreeSize() <= m_num_local_wi );
+   assert( m_num_points % m_num_local_wi == 0 );
+}
+
+// -----------------------------------------------------------------------------
+void PPCE::CalculateNDRanges() 
+{
+   // Naïve rule:
+   if( m_params->m_population_size <= m_max_wi_size )
+   {
+      m_num_local_wi = m_params->m_population_size;
+      m_num_global_wi= m_params->m_population_size;
+   } else
+   {
+      m_num_local_wi = m_max_wi_size;
+
+      // global size should be evenly divided by m_num_local_wi
+      if( m_params->m_population_size % m_num_local_wi == 0 )
+         m_num_global_wi = m_params->m_population_size;
+      else // round to the next divisible size (the kernel will ensure that
+         // no access outside the population range will occur.
+         m_num_global_wi = m_params->m_population_size + m_num_local_wi 
+            - (m_params->m_population_size % m_num_local_wi );
+   }
+
+   // Rules to better distribute the workload throughout the GPU processors
+}
+
+// -----------------------------------------------------------------------------

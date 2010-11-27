@@ -48,10 +48,24 @@ int main( int argc, char** argv )
       GP* gp_engine = 0;
 
       try {
-         if( parameters.m_device == Params::DEVICE_CPU )
-            gp_engine = new GPonCPU( parameters );
-         else 
-            gp_engine = new GPonGPU( parameters );
+         switch( parameters.m_device )
+         {
+            case Params::DEVICE_CPU:
+               gp_engine = new GPonCPU( parameters );
+               break;
+            case Params::DEVICE_GPU_FPI:
+               gp_engine = new FPI( parameters );
+               break;
+            case Params::DEVICE_GPU_FPC:
+               gp_engine = new FPC( parameters );
+               break;
+            case Params::DEVICE_GPU_PPCU:
+               gp_engine = new PPCU( parameters );
+               break;
+            case Params::DEVICE_GPU_PPCE:
+               gp_engine = new PPCE( parameters );
+               break;
+         }
 
          gp_engine->Run();
       }

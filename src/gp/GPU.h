@@ -30,140 +30,97 @@
 #include "GP.h"
 
 // -----------------------------------------------------------------------------
-// FIXME: Provide a derived class for each strategy!
 class GPonGPU: public GP {
 public:
+   GPonGPU( Params& p ): GP( p, CL_DEVICE_TYPE_GPU )
+   {
+      // Load common definitions
+      LoadKernel( "kernels/common.cl" );
+   }
+
    virtual ~GPonGPU()
    {
       std::cerr << "\nCleaning GPonGPU...\n";
-      //if( m_X ) delete[] m_X;
    }
 
    void PrintStrategy() const 
    { 
-      std::cout << "GPU ";
-      switch( m_params->m_device )
-      {
-         case Params::DEVICE_GPU_FPI:
-            std::cout << "FPI";
-            break;
-         case Params::DEVICE_GPU_FPC:
-            std::cout << "FPC";
-            break;
-         case Params::DEVICE_GPU_PPCU:
-            std::cout << "PPCU";
-            break;
-         case Params::DEVICE_GPU_PPCE:
-            std::cout << "PPCE";
-            break;
-      }
-      std::cout << " (" << m_max_cu << " compute units)";
+      std::cout << "GPU" << " (" << m_max_cu << " compute units) ";
    }
+
+   void LoadPoints();
+};
+
+// -----------------------------------------------------------------------------
+class PPCU: public GPonGPU {
+public:
+   PPCU( Params& p ): GPonGPU( p )
+   {
+      std::cout << "Strategy 'population-parallel compute unit'\n";
+      LoadKernel( "kernels/gpu_ppcu.cl" );
+   }
+
+   virtual ~PPCU() { std::cerr << "\nCleaning PPCU...\n"; }
+
+   void PrintStrategy() const { GPonGPU::PrintStrategy(); std::cout << "PPCU"; }
 
    void SetKernelArgs()
    {
       GP::SetKernelArgs();
 
-      if( m_params->m_device == Params::DEVICE_GPU_PPCU )
-      {
-         m_kernel.setArg( 4, sizeof(uint) * MaximumTreeSize(), NULL );
-      }
+      m_kernel.setArg( 4, sizeof(uint) * MaximumTreeSize(), NULL );
    }
 
-   void CalculateNDRanges() 
-   {
-      switch( m_params->m_device )
-      {
-         case Params::DEVICE_GPU_FPI:
-            NDRangesFPI();
-            break;
-         case Params::DEVICE_GPU_FPC:
-            NDRangesFPC();
-            break;
-         case Params::DEVICE_GPU_PPCU:
-            NDRangesPPCU();
-            break;
-         case Params::DEVICE_GPU_PPCE:
-            NDRangesPPCE();
-            break;
-      }
-   }
-
-   // -----------
-   void NDRangesPPCU()
-   {
-      if( m_num_points < m_max_wi_size )
-         m_num_local_wi = m_num_points;
-      else
-         m_num_local_wi = m_max_wi_size;
-
-      // FIXME: m_num_global_wi % m_num_local_wi
-      // One individual por each group
-      m_num_global_wi = m_num_local_wi * m_params->m_population_size;
-
-      // FIXME: Remove these restrictions! (need to change the kernel)
-      // For now, m_num_local_wi must be power of two; let's check it:
-      assert( ((int)m_num_local_wi & -(int)m_num_local_wi) == (int)m_num_local_wi );
-      assert( MaximumTreeSize() <= m_num_local_wi );
-      assert( m_num_points % m_num_local_wi == 0 );
-   }
-
-   // -----------
-   void NDRangesPPCE() 
-   {
-      // Naïve rule:
-      if( m_params->m_population_size <= m_max_wi_size )
-      {
-         m_num_local_wi = m_params->m_population_size;
-         m_num_global_wi= m_params->m_population_size;
-      } else
-      {
-         m_num_local_wi = m_max_wi_size;
-
-         // global size should be evenly divided by m_num_local_wi
-         if( m_params->m_population_size % m_num_local_wi == 0 )
-            m_num_global_wi = m_params->m_population_size;
-         else // round to the next divisible size (the kernel will ensure that
-              // no access outside the population range will occur.
-            m_num_global_wi = m_params->m_population_size + m_num_local_wi 
-                              - (m_params->m_population_size % m_num_local_wi );
-      }
-
-      // Rules to better distribute the workload throughout the GPU processors
-
-   }
-
-   void NDRangesFPI() {}
-   void NDRangesFPC() {}
-
-   GPonGPU( Params& p ): GP( p, CL_DEVICE_TYPE_GPU )
-   {
-      // Load common definitions
-      LoadKernel( "kernels/common.cl" );
-
-      switch( m_params->m_device )
-      {
-         // Load the specific kernel according to the actual GPU strategy
-         case Params::DEVICE_GPU_FPI:
-            std::cout << "Strategy 'fitness-parallel interpreted'\n";
-            LoadKernel( "kernels/gpu_fp.cl" );
-            break;
-         case Params::DEVICE_GPU_FPC:
-            std::cout << "Strategy 'fitness-parallel compiled'\n";
-            LoadKernel( "kernels/gpu_fp.cl" );
-            break;
-         case Params::DEVICE_GPU_PPCU:
-            std::cout << "Strategy 'population-parallel compute unit'\n";
-            LoadKernel( "kernels/gpu_ppcu.cl" );
-            break;
-         case Params::DEVICE_GPU_PPCE:
-            std::cout << "Strategy 'population-parallel compute element'\n";
-            LoadKernel( "kernels/gpu_ppce.cl" );
-            break;
-      }
-   }
-
-  void LoadPoints();
+   void CalculateNDRanges(); 
 };
 
+// -----------------------------------------------------------------------------
+class PPCE: public GPonGPU {
+public:
+   PPCE( Params& p ): GPonGPU( p )
+   {
+      std::cout << "Strategy 'population-parallel compute element'\n";
+      LoadKernel( "kernels/gpu_ppce.cl" );
+   }
+
+   virtual ~PPCE() { std::cerr << "\nCleaning PPCE...\n"; }
+
+   void PrintStrategy() const { GPonGPU::PrintStrategy(); std::cout << "PPC#"; }
+
+   void CalculateNDRanges();
+};
+
+// -----------------------------------------------------------------------------
+class FPI: public GPonGPU {
+public:
+   FPI( Params& p ): GPonGPU( p )
+   {
+      std::cout << "Strategy 'fitness-parallel interpreted'\n";
+      LoadKernel( "kernels/gpu_fpi.cl" );
+   }
+
+   virtual ~FPI() { std::cerr << "\nCleaning FPI...\n"; }
+
+   void PrintStrategy() const { GPonGPU::PrintStrategy(); std::cout << "FPI"; }
+
+   void CalculateNDRanges() {}
+};
+
+// -----------------------------------------------------------------------------
+class FPC: public GPonGPU {
+public:
+   FPC( Params& p ): GPonGPU( p )
+   {
+      std::cout << "Strategy 'fitness-parallel compiled'\n";
+      LoadKernel( "kernels/gpu_fpc.cl" );
+   }
+
+   virtual ~FPC() { std::cerr << "\nCleaning FPC...\n"; }
+
+   void PrintStrategy() const { GPonGPU::PrintStrategy(); std::cout << "FPC"; }
+
+   void CalculateNDRanges() {}
+};
+
+// -----------------------------------------------------------------------------
 #endif
