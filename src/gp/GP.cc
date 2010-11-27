@@ -167,7 +167,7 @@ void GP::Breed( cl_uint* old_pop, cl_uint* new_pop )
 #ifdef PROFILING
       // Update the total number of nodes that are going to be evaluated (to be
       // used to calculate how many GPop/s we could achieve).
-      m_node_evaluations += ProgramSize( new_pop, i );
+      m_node_evaluations += ProgramSize( new_pop, i ) * m_num_points;
 #endif
    }
 
@@ -195,7 +195,7 @@ void GP::Breed( cl_uint* old_pop, cl_uint* new_pop )
 #ifdef PROFILING
       // Update the total number of nodes that are going to be evaluated (to be
       // used to calculate how many GPop/s we could achieve).
-      m_node_evaluations += ProgramSize( new_pop, i );
+      m_node_evaluations += ProgramSize( new_pop, i ) * m_num_points;
 #endif
 /*#ifndef NDEBUG
       std::cout << std::endl;
@@ -716,7 +716,7 @@ void GP::InitializePopulation( cl_uint* pop )
 #ifdef PROFILING
       // Update the total number of nodes that are going to be evaluated (to be
       // used to calculate how many GPop/s we could achieve).
-      m_node_evaluations += tree_size;
+      m_node_evaluations += tree_size * m_num_points;
 #endif
    }
 }
