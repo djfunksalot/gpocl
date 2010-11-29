@@ -34,6 +34,9 @@
 */
 #define PROFILING 1
 
+/* Use native functions (hardware implemented) whenever available. */
+#define FAST_PRIMITIVES 1
+
 /*
    When MAPPING is defined the output values (predictions) from the kernel
    executions are read via mapping, which is supposed faster than explicit

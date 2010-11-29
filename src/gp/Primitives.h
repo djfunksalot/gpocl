@@ -58,12 +58,14 @@ public:
    Primitives();
 
    struct Primitive { 
-      Primitive( cl_uint a, const std::string& n, const std::string& s, const std::string& c ):
-         arity( a ), name( n ), symbol( s ), code( c ) {}
+      Primitive( cl_uint a, const std::string& n, const std::string& s, 
+                 const std::string& c, const std::string& fc = "" ):
+         arity( a ), name( n ), symbol( s ), code( c ), fastcode( fc ) {}
       cl_uint arity;
       std::string name;
       std::string symbol;
       std::string code;
+      std::string fastcode;
    };
 
    /** @brief The database of primitives
@@ -104,7 +106,7 @@ private:
      then it returns a pair of 'arity' and 'index'. Otherwise it throws an error.
      */
    std::pair<cl_uint, cl_uint> Find( const std::string& token );
-   void Register( cl_uint, const std::string&, const std::string&, const std::string& );
+   void Register( cl_uint, const std::string&, const std::string&, const std::string&, const std::string& = "" );
 
    std::vector<std::pair<unsigned, unsigned> > m_primitives_boundaries;
 

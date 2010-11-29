@@ -625,7 +625,15 @@ void GP::BuildKernel()
          {
             interpreter += " case " + util::ToString( INDEX( m_primitives.m_primitives[i] ) ) + ":"
                + "PUSH(" + util::ToString( m_primitives.DB[INDEX( m_primitives.m_primitives[i] )].arity ) 
-               + "," + m_primitives.DB[INDEX( m_primitives.m_primitives[i] )].code + ") break;";
+               + "," + 
+#ifdef FAST_PRIMITIVES
+            ( m_primitives.DB[INDEX( m_primitives.m_primitives[i] )].fastcode.empty() ?
+              m_primitives.DB[INDEX( m_primitives.m_primitives[i] )].code :
+              m_primitives.DB[INDEX( m_primitives.m_primitives[i] )].fastcode )
+#else
+              m_primitives.DB[INDEX( m_primitives.m_primitives[i] )].code 
+#endif
+               + ") break;";
 
             // Make this primitive as already added to the interpreter
             already_added[INDEX( m_primitives.m_primitives[i] )] = true;

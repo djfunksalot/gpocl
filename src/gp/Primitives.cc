@@ -36,6 +36,14 @@ Primitives::Primitives(): m_need_identity( false ),
    m_min_Y( std::numeric_limits<unsigned>::max() ),
    m_max_Y( std::numeric_limits<unsigned>::min() )
 {
+   /* We already check for Infinity/NaN, thus I think we don't need to check
+      the inputs of each sensitive function--with unprotected functions the
+      evaluation is faster and it seems to produce better programs. Moreover,
+      there is a philosophical question here: should a program encoding bad
+      combinations (or allowing bad inputs) be considered a possibly good one?
+    */
+#define UNPROTECTED_FUNCTIONS 1
+
    /* The first two primitives are special, they need to be the first ones. */
    Register( 0, "ephemeral",    "ephemeral",    "AS_FLOAT( NODE )" );
    assert( GPT_EPHEMERAL == DB.size() - 1 );
@@ -46,7 +54,11 @@ Primitives::Primitives(): m_need_identity( false ),
 
    Register( 2, "add",          "+",            "ARG(0) + ARG(1)" );
    Register( 2, "and",          "&&",           "ARG(0) && ARG(1)" );
-   Register( 2, "div",          "/",            "(ARG(1) == 0.0f ? 1.0f : ARG(0)/ARG(1))" );
+#ifdef UNPROTECTED_FUNCTIONS
+   Register( 2, "div",          "/",            "ARG(0)/ARG(1)", "native_divide(ARG(0), ARG(1))"  );
+#else
+   Register( 2, "div",          "/",            "(ARG(1) == 0.0f ? 1.0f : ARG(0)/ARG(1))", "(ARG(1) == 0.0f ? 1.0f : native_divide( ARG(0), ARG(1) ) )"  );
+#endif
    Register( 2, "equal",        "=",            "ARG(0) == ARG(1)" );
    Register( 2, "fmod",         "%",            "fmod(ARG(0), ARG(1))" );
    Register( 2, "greater",      ">",            "ARG(0) > ARG(1)" );
@@ -65,19 +77,31 @@ Primitives::Primitives(): m_need_identity( false ),
    Register( 1, "^3",           "^3",           "ARG(0) * ARG(0) * ARG(0)" );
    Register( 1, "^4",           "^4",           "ARG(0) * ARG(0) * ARG(0) * ARG(0)" );
    Register( 1, "ceil",         "ceil",         "ceil(ARG(0))" );
-   Register( 1, "cos",          "cos",          "cos(ARG(0))" );
-   Register( 1, "exp",          "exp",          "exp(ARG(0))" );
+   Register( 1, "cos",          "cos",          "cos(ARG(0))", "native_cos(ARG(0))" );
+   Register( 1, "exp",          "exp",          "exp(ARG(0))", "native_exp(ARG(0))" );
+   Register( 1, "exp2",         "exp2",         "exp2(ARG(0))", "native_exp2(ARG(0))" );
+   Register( 1, "exp10",        "exp10",        "exp10(ARG(0))", "native_exp10(ARG(0))" );
    Register( 1, "fabs",         "fabs",         "fabs(ARG(0))" );
    Register( 1, "floor",        "floor",        "floor(ARG(0))" );
-   Register( 1, "log",          "log",          "(ARG(0) < 1.0f ? 1.0f : log(ARG(0)))" );
-   Register( 1, "log10",        "log10",        "(ARG(0) < 1.0f ? 1.0f : log10(ARG(0)))" );
-   Register( 1, "log2",         "log2",         "(ARG(0) < 1.0f ? 1.0f : log2(ARG(0)))" );
+#ifdef UNPROTECTED_FUNCTIONS
+   Register( 1, "log",          "log",          "log(ARG(0))",   "native_log(ARG(0))"  );
+   Register( 1, "log10",        "log10",        "log10(ARG(0))", "native_log10(ARG(0))" );
+   Register( 1, "log2",         "log2",         "log2(ARG(0))",  "native_log2(ARG(0))" );
+#else
+   Register( 1, "log",          "log",          "(ARG(0) < 1.0f ? 1.0f : log(ARG(0)))", "(ARG(0) < 1.0f ? 1.0f : native_log(ARG(0)))"  );
+   Register( 1, "log10",        "log10",        "(ARG(0) < 1.0f ? 1.0f : log10(ARG(0)))", "(ARG(0) < 1.0f ? 1.0f : native_log10(ARG(0)))" );
+   Register( 1, "log2",         "log2",         "(ARG(0) < 1.0f ? 1.0f : log2(ARG(0)))", "(ARG(0) < 1.0f ? 1.0f : native_log2(ARG(0)))"  );
+#endif
    Register( 1, "neg",          "neg",          "-ARG(0)" );
    Register( 1, "not",          "!",            "!(int)ARG(0)" );
    Register( 1, "round",        "round",        "round(ARG(0))" );
-   Register( 1, "sin",          "sin",          "sin(ARG(0))" );
-   Register( 1, "sqrt",         "sqrt",         "(ARG(0) < 0.0f ? 1.0f : sqrt(ARG(0)))" );
-
+   Register( 1, "sin",          "sin",          "sin(ARG(0))", "native_sin(ARG(0))" );
+#ifdef UNPROTECTED_FUNCTIONS
+   Register( 1, "sqrt",         "sqrt",         "sqrt(ARG(0))", "native_sqrt(ARG(0))"  );
+   Register( 1, "tan",          "tan",          "tan(ARG(0))", "native_tan(ARG(0))" ); // TODO: add check for invalid values or let return NaN and so "kill" the program?
+#else
+   Register( 1, "sqrt",         "sqrt",         "(ARG(0) < 0.0f ? 1.0f : sqrt(ARG(0)))", "(ARG(0) < 0.0f ? 1.0f : native_sqrt(ARG(0)))"  );
+#endif
    Register( 0, "c_-1",         "-1",           "-1.0f" );
    Register( 0, "c_-2",         "-2",           "-2.0f" );
    Register( 0, "c_-3",         "-3",           "-3.0f" );
@@ -132,14 +156,14 @@ std::pair<cl_uint, cl_uint> Primitives::Find( const std::string& token )
 }
 
 // -----------------------------------------------------------------------------
-void Primitives::Register( cl_uint arity, const std::string& name, 
-                           const std::string& symbol, const std::string& code )
+void Primitives::Register( cl_uint arity, const std::string& name, const std::string& symbol,
+                           const std::string& code, const std::string& fastcode )
 {
    assert( DB.size() < 126 ); // '127 = 2^7 - (1 + 1)', 1 for GPT_VAR and 1 for GPF_IDENTITY
    // Only accept lowercase primitives
    assert( util::ToLower( symbol ) == symbol && util::ToLower( name ) == name );
 
-   DB.push_back( Primitive( arity, name, symbol, code ) );
+   DB.push_back( Primitive( arity, name, symbol, code, fastcode ) );
 }
 
 // -----------------------------------------------------------------------------
