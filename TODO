@@ -1,0 +1,4 @@
+- Implement "Genetic Operations Hidding" and evaluate its performance. Hidding
+  genetic operations means that after each newly created program an OpenCL
+  kernel is launched (non-blocking / asynchronously) to interpret/evaluate this
+  program.
