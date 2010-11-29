@@ -57,16 +57,19 @@ void PPCU::CalculateNDRanges()
    else
       m_num_local_wi = m_max_wi_size;
 
-   // FIXME: m_num_global_wi % m_num_local_wi
    // One individual por each group
    m_num_global_wi = m_num_local_wi * m_params->m_population_size;
 
    if( MaximumTreeSize() <= m_num_local_wi )
-      m_compile_flags += "-D MAX_TREE_SIZE_IS_LESS_THAN_WGS";
+      m_compile_flags += " -D MAX_TREE_SIZE_IS_LESS_THAN_WGS";
+
+   if( ! util::IsPowerOf2( m_num_local_wi ) )
+      m_compile_flags += " -D WGS_IS_NOT_POWER_OF_2";
+
+   m_compile_flags += " -D WGS_NEXT_POWER_OF_2=" 
+                      + util::ToString( util::NextPowerOf2( m_num_local_wi ) );
 
    // FIXME: Remove these restrictions! (need to change the kernel)
-   // For now, m_num_local_wi must be power of two; let's check it:
-   assert( ((int)m_num_local_wi & -(int)m_num_local_wi) == (int)m_num_local_wi );
    assert( m_num_points % m_num_local_wi == 0 );
 }
 

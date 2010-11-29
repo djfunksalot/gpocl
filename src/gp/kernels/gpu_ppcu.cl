@@ -76,13 +76,19 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
         |-----> total sum is stored on the first work-item
     */
          
-   // FIXME: ensure WGS is power of 2 (p.e., when NUM_POINTS < Max WGS, then
-   // WGS = NUM_POINTS )
-   for( uint d = 2; d <= WGS; d *= 2 )
+   for( uint d = 2; d <= WGS_NEXT_POWER_OF_2; d *= 2 )
    {
       barrier(CLK_LOCAL_MEM_FENCE);
 
-      if( lo_id % d == 0 ) PE[lo_id] += PE[lo_id + d/2];
+      if( lo_id % d == 0 ) 
+      {
+#ifdef WGS_IS_NOT_POWER_OF_2
+         /* If WGS is not power of two (and we are iterating up to the next power
+            of two value) then we need to ensure that we will not read past WGS. */
+         if( lo_id + d/2 < WGS )
+#endif
+         PE[lo_id] += PE[lo_id + d/2];
+      }
    }
 
    // Store on the global memory (to be read by the host)
