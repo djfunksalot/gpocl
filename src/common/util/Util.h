@@ -131,6 +131,30 @@ private:
 };
 
 // -----------------------------------------------------------------------------
+/** @brief Determine if a given integral number is power of two.
+  */
+inline bool IsPowerOf2( int n )
+{
+   return (n & -n) == n;
+}
+
+// -----------------------------------------------------------------------------
+/** @brief Calculate the next power of 2 of a given integral number.
+  */
+inline unsigned NextPowerOf2( unsigned n )
+{
+   n--;
+   n |= n >> 1;  // handle  2 bit numbers
+   n |= n >> 2;  // handle  4 bit numbers
+   n |= n >> 4;  // handle  8 bit numbers
+   n |= n >> 8;  // handle 16 bit numbers
+   n |= n >> 16; // handle 32 bit numbers
+   n++;
+
+   return n;
+}
+
+// -----------------------------------------------------------------------------
 } // end namespace
 // -----------------------------------------------------------------------------
 
