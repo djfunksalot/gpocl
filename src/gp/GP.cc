@@ -638,17 +638,18 @@ void GP::BuildKernel()
       we can lower this and then save memory on the device. The formula below give us
       the upper bound for stack use:
 
-                               |            MTS            |
-            stack size = MTS - |  -----------------------  |
-                               |       /              \    |
-                               |   min|  arity   , MTS |   |
-                               |_      \     max      /   _|
+                             /          |            MTS             | \
+            stack size = max|  1, MTS - |  ------------------------  |  |
+                            |           |       /               \    |  |
+                            |           |   min|  arity   , MTS  |   |  |
+                             \          |_      \      max      /   _| /
 
             where MTS is MaximumTreeSize().
     */
 
-   unsigned max_stack_size = (unsigned) MaximumTreeSize() - 
-      std::floor(MaximumTreeSize() / (float) std::min( m_primitives.m_max_arity, MaximumTreeSize() ) );
+   unsigned max_stack_size = std::max( 1U, static_cast<unsigned>( MaximumTreeSize() - 
+                                           std::floor(MaximumTreeSize() / 
+                                           (float) std::min( m_primitives.m_max_arity, MaximumTreeSize() ) ) ) );
 
    // program_src = header + kernel
    std::string program_src = 
