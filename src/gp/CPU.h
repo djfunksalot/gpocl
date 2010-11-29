@@ -37,10 +37,10 @@ public:
    void CalculateNDRanges() 
    {
       // On the CPU there is only on work-item per work-group
-      m_num_local_wi = 1;
+      m_local_size = 1;
 
       // One individual being evaluated per compute unit ("core")
-      m_num_global_wi = m_params->m_population_size;
+      m_global_size = m_params->m_population_size;
    }
 
    void PrintStrategy() const { std::cout << "CPU (" << m_max_cu << " compute units)"; }

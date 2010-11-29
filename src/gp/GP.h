@@ -77,14 +77,6 @@ Definitions:
 */
 
 
-/*
-FIXME:
-
-On the GPU:
-- population_size must be divided by work_group_size (usually 256)
-- num_points must be divided by work_group_size
-*/
-
 // -----------------------------------------------------------------------------
 class GP {
 public:
@@ -130,7 +122,7 @@ public:
 
       // [virtual]
       CalculateNDRanges();
-      std::cout << "NDRanges: [local: " << m_num_local_wi << ", global: " << m_num_global_wi << "]\n";
+      std::cout << "NDRanges: [local: " << m_local_size << ", global: " << m_global_size << "]\n";
 
       // Create buffers
       CreateBuffers();
@@ -289,8 +281,8 @@ protected:
    size_t m_max_wg_size;
    size_t m_max_wi_size;
 
-   size_t m_num_global_wi;
-   size_t m_num_local_wi;
+   size_t m_global_size;
+   size_t m_local_size;
 
    std::string m_compile_flags;
 #ifdef PROFILING

@@ -53,24 +53,24 @@ void GPonGPU::LoadPoints()
 void PPCU::CalculateNDRanges() 
 {
    if( m_num_points < m_max_wi_size )
-      m_num_local_wi = m_num_points;
+      m_local_size = m_num_points;
    else
-      m_num_local_wi = m_max_wi_size;
+      m_local_size = m_max_wi_size;
 
    // One individual por each group
-   m_num_global_wi = m_num_local_wi * m_params->m_population_size;
+   m_global_size = m_local_size * m_params->m_population_size;
 
-   if( MaximumTreeSize() <= m_num_local_wi )
-      m_compile_flags += " -D MAX_TREE_SIZE_IS_LESS_THAN_WGS";
+   if( MaximumTreeSize() <= m_local_size )
+      m_compile_flags += " -D MAX_TREE_SIZE_IS_LESS_THAN_LOCAL_SIZE";
 
-   if( ! util::IsPowerOf2( m_num_local_wi ) )
-      m_compile_flags += " -D WGS_IS_NOT_POWER_OF_2";
+   if( ! util::IsPowerOf2( m_local_size ) )
+      m_compile_flags += " -D LOCAL_SIZE_IS_NOT_POWER_OF_2";
 
-   m_compile_flags += " -D WGS_NEXT_POWER_OF_2=" 
-                      + util::ToString( util::NextPowerOf2( m_num_local_wi ) );
+   m_compile_flags += " -D LOCAL_SIZE_NEXT_POWER_OF_2=" 
+                      + util::ToString( util::NextPowerOf2( m_local_size ) );
 
    // FIXME: Remove these restrictions! (need to change the kernel)
-   assert( m_num_points % m_num_local_wi == 0 );
+   assert( m_num_points % m_local_size == 0 );
 }
 
 // -----------------------------------------------------------------------------
@@ -79,19 +79,19 @@ void PPCE::CalculateNDRanges()
    // Naïve rule:
    if( m_params->m_population_size <= m_max_wi_size )
    {
-      m_num_local_wi = m_params->m_population_size;
-      m_num_global_wi= m_params->m_population_size;
+      m_local_size = m_params->m_population_size;
+      m_global_size= m_params->m_population_size;
    } else
    {
-      m_num_local_wi = m_max_wi_size;
+      m_local_size = m_max_wi_size;
 
-      // global size should be evenly divided by m_num_local_wi
-      if( m_params->m_population_size % m_num_local_wi == 0 )
-         m_num_global_wi = m_params->m_population_size;
+      // global size should be evenly divided by m_local_size
+      if( m_params->m_population_size % m_local_size == 0 )
+         m_global_size = m_params->m_population_size;
       else // round to the next divisible size (the kernel will ensure that
          // no access outside the population range will occur.
-         m_num_global_wi = m_params->m_population_size + m_num_local_wi 
-            - (m_params->m_population_size % m_num_local_wi );
+         m_global_size = m_params->m_population_size + m_local_size 
+            - (m_params->m_population_size % m_local_size );
    }
 
    // Rules to better distribute the workload throughout the GPU processors
@@ -101,13 +101,13 @@ void PPCE::CalculateNDRanges()
 void FPI::CalculateNDRanges() 
 {
    // Distribute the points (workload) evenly among the compute units
-   m_num_local_wi = std::min( (unsigned) std::ceil( m_num_points / m_max_cu ),
+   m_local_size = std::min( (unsigned) std::ceil( m_num_points / m_max_cu ),
          (unsigned) m_max_wi_size );
-   // Make m_num_global_wi be divisible by m_num_local_wi
-   m_num_global_wi = m_num_points + m_num_local_wi - (m_num_points % m_num_local_wi); 
+   // Make m_global_size be divisible by m_local_size
+   m_global_size = m_num_points + m_local_size - (m_num_points % m_local_size); 
 
-   if( MaximumTreeSize() <= m_num_local_wi )
-      m_compile_flags += "-D MAX_TREE_SIZE_IS_LESS_THAN_WGS";
+   if( MaximumTreeSize() <= m_local_size )
+      m_compile_flags += "-D MAX_TREE_SIZE_IS_LESS_THAN_LOCAL_SIZE";
 }
 
 // -----------------------------------------------------------------------------

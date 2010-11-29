@@ -444,7 +444,7 @@ bool GP::EvaluatePopulation( cl_uint* pop )
    
    // ---------- begin kernel execution
    m_queue.enqueueNDRangeKernel( m_kernel, cl::NDRange(), 
-                                 cl::NDRange( m_num_global_wi ), cl::NDRange( m_num_local_wi )
+                                 cl::NDRange( m_global_size ), cl::NDRange( m_local_size )
 #ifdef PROFILING
                                  , NULL, &e_time
 #endif
@@ -543,7 +543,7 @@ void GP::OpenCLInit()
    m_max_wg_size = m_device.getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>();
    m_max_wi_size = m_device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
 
-   std::cout << "\nMax CU: " << m_max_cu << " WGS: " << m_max_wg_size << " WIS[0]:" << m_max_wi_size <<  std::endl;
+   std::cout << "\nMax CU: " << m_max_cu << " LOCAL_SIZE: " << m_max_wg_size << " WIS[0]:" << m_max_wi_size <<  std::endl;
 
 #ifdef PROFILING
    m_queue = cl::CommandQueue( m_context, m_device, CL_QUEUE_PROFILING_ENABLE );
@@ -576,7 +576,7 @@ void GP::CreateBuffers()
 
    // Buffer (memory on the device) of partial errors
 #ifndef NDEBUG
-   std::cout << "Trying to allocate " << sizeof( cl_float ) * m_num_local_wi * m_params->m_population_size << " bytes for the prediction errors\n";
+   std::cout << "Trying to allocate " << sizeof( cl_float ) * m_local_size * m_params->m_population_size << " bytes for the prediction errors\n";
 #endif
    m_buf_E = cl::Buffer( m_context,
 #ifdef MAPPING
@@ -584,7 +584,7 @@ void GP::CreateBuffers()
 #else
                          CL_MEM_WRITE_ONLY,
 #endif
-                         m_num_local_wi * m_params->m_population_size * sizeof(cl_float) );
+                         m_local_size * m_params->m_population_size * sizeof(cl_float) );
 
   /* 
    Structure of a program (individual)
@@ -652,7 +652,7 @@ void GP::BuildKernel()
 
    // program_src = header + kernel
    std::string program_src = 
-      "#define WGS " + util::ToString( m_num_local_wi ) + "\n" +
+      "#define LOCAL_SIZE " + util::ToString( m_local_size ) + "\n" +
       "#define POP_SIZE " + util::ToString( m_params->m_population_size ) + "\n" +
       "#define NUM_POINTS " + util::ToString( m_num_points ) + "\n"
       "#define X_DIM " + util::ToString( m_x_dim ) + "\n"
