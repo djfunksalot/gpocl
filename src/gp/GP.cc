@@ -787,6 +787,9 @@ void GP::PrintNode( const cl_uint* node ) const
       case Primitives::GPT_EPHEMERAL:
          std::cout << AS_FLOAT( *node ) << "";
          break;
+      case Primitives::GPT_CLASS:
+         std::cout << "class(" << AS_INT( *node ) << ")";
+         break;
       case Primitives::GPF_IDENTITY:
          std::cout << "I";
          break;
@@ -904,7 +907,9 @@ void GP::LoadPoints( std::vector<std::vector<cl_float> > & out_x )
   //    m_Y[out_x.size()] = v.back(); v.pop_back();
       m_Y.push_back( v.back() ); v.pop_back();
       
-
+      // Update m_min_Y/m_max_Y (only useful for data classification)
+      if( m_Y.back() < m_primitives.m_min_Y && m_Y.back() > 0 ) m_primitives.m_min_Y = m_Y.back();
+      if( m_Y.back() > m_primitives.m_max_Y ) m_primitives.m_max_Y = m_Y.back();
 
       out_x.push_back( v );
    }

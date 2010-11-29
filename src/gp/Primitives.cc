@@ -27,15 +27,20 @@
 #include "Primitives.h"
 
 #include <algorithm>
+#include <limits>
 
 #include "../common/util/Random.h"
 
 // -----------------------------------------------------------------------------
-Primitives::Primitives(): m_need_identity( false ) 
+Primitives::Primitives(): m_need_identity( false ), 
+   m_min_Y( std::numeric_limits<unsigned>::max() ),
+   m_max_Y( std::numeric_limits<unsigned>::min() )
 {
    /* The first two primitives are special, they need to be the first ones. */
    Register( 0, "ephemeral",    "ephemeral",    "AS_FLOAT( NODE )" );
    assert( GPT_EPHEMERAL == DB.size() - 1 );
+   Register( 0, "class",        "class",        "AS_INT( NODE )" );
+   assert( GPT_CLASS == DB.size() - 1 );
 
    Register( 3, "if-then-else", "ite",          "ARG(0) ? ARG(1) : ARG(2)" );
 
@@ -279,6 +284,9 @@ cl_uint Primitives::RandomNode( unsigned min, unsigned max ) const
    // Handle the ephemeral constants because they need to get a random value on-the-fly
    if( INDEX( node ) == GPT_EPHEMERAL )
       node = PackNode( 0, GPT_EPHEMERAL, (float) Random::Real( 0.0, SCALE_FACTOR ) );
+   else if( INDEX( node ) == GPT_CLASS ) // packs a random class index
+      // TODO: Accept negative values (not particularly useful, but...)
+      node = PackNode( 0, GPT_CLASS, (cl_uint) Random::Int( m_min_Y, m_max_Y ) );
 
    // The returned cl_uint is a packed node
    return node;

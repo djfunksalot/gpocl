@@ -53,7 +53,7 @@ public:
       Error( const std::string& msg ): Exception( "@ Primitives ", msg ) {};
    };
 
-   enum { GPT_EPHEMERAL, GPF_IDENTITY = 126, GPT_VAR = 127 };
+   enum { GPT_EPHEMERAL = 0, GPT_CLASS = 1, GPF_IDENTITY = 126, GPT_VAR = 127 };
 public:
    Primitives();
 
@@ -96,6 +96,8 @@ public:
 
    bool m_need_identity;
    unsigned m_max_arity;
+   unsigned m_min_Y;
+   unsigned m_max_Y;
 private:
    /**
      Try to find the corresponding primitive by name or symbol. When it finds,
