@@ -38,6 +38,7 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
       comparison in each iteration due to the guarantee of not having work-items
       accessing beyond the available amount of points. */
    for( uint iter = 0; iter < NUM_POINTS/LOCAL_SIZE; ++iter )
+   {
 #else
    for( uint iter = 0; iter < ceil( NUM_POINTS / (float) LOCAL_SIZE); ++iter )
    {
