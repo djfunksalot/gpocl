@@ -73,36 +73,25 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
    /*
       Parallel way to perform reduction within the work-group:
 
-      | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |     LOCAL_SIZE = 8
+      | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |                  _  
+        |_______________|                -> (lo_id = 0)   | 
+            |_______________|            -> (lo_id = 1)   |  t0
+                |_______________|        -> (lo_id = 2)   | (s=4)
+                    |_______________|    -> (lo_id = 3)  _| 
+                                                         _
+        |_______|                        -> (lo_id = 0)   |  t1
+            |_______|                    -> (lo_id = 1)  _| (s=2)
+                                                         _
+        |___|                            -> (lo_id = 0)  _|  t2 (s=1)
 
-        |___|   |___|   |___|   |___|       d = 2
-        
-      | 0 |   | 2 |   | 4 |   | 6 |      
-
-        |_______|       |_______|           d = 4
-
-      | 0 |           | 4 |               
-
-        |_______________|                   d = 8
-
-      | 0 |
-
-        |-----> total sum is stored on the first work-item
+        L----> total sum is stored on the first work-item
     */
          
-   for( uint d = 2; d <= LOCAL_SIZE_NEXT_POWER_OF_2; d *= 2 )
+   for( uint s = LOCAL_SIZE_NEXT_POWER_OF_2 / 2; s > 0; s >>= 1 ) 
    {
       barrier(CLK_LOCAL_MEM_FENCE);
 
-      if( lo_id % d == 0 ) 
-      {
-#ifdef LOCAL_SIZE_IS_NOT_POWER_OF_2
-         /* If LOCAL_SIZE is not power of two (and we are iterating up to the next power
-            of two value) then we need to ensure that we will not read past LOCAL_SIZE. */
-         if( lo_id + d/2 < LOCAL_SIZE )
-#endif
-            PE[lo_id] += PE[lo_id + d/2];
-      }
+      if( lo_id < s ) PE[lo_id] += PE[lo_id + s];
    }
 
    // Store on the global memory (to be read by the host)

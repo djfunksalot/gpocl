@@ -63,9 +63,6 @@ void PPCU::CalculateNDRanges()
    if( MaximumTreeSize() <= m_local_size )
       m_compile_flags += "-D PROGRAM_TREE_FITS_IN_LOCAL_SIZE";
 
-   if( ! util::IsPowerOf2( m_local_size ) )
-      m_compile_flags += " -D LOCAL_SIZE_IS_NOT_POWER_OF_2";
-
    m_compile_flags += " -D LOCAL_SIZE_NEXT_POWER_OF_2=" 
                       + util::ToString( util::NextPowerOf2( m_local_size ) );
 
