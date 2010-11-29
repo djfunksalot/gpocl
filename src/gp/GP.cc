@@ -126,7 +126,10 @@ void GP::Evolve()
    // 3:
    for( unsigned gen = 2; gen <= m_params->m_number_of_generations; ++gen )
    {
-      std::cout << "\n[Gen " << gen << " of " << m_params->m_number_of_generations << "]...\n";
+      std::cout << "\n[Gen " << gen << " of " << m_params->m_number_of_generations << "]... ";
+#ifdef PROFILING
+      std::cout << std::setprecision(2) << std::fixed << "[GPop/s: " << m_node_evaluations / (m_kernel_time/1.0E9) << std::setprecision(4) << " | Node evals: " << m_node_evaluations << " | Avg. KET: " << m_kernel_time / (m_kernel_calls * 1.0E6) << "ms | Avg. KLT: " << m_launch_time / (m_kernel_calls * 1.0E6) << "ms | Acc. KET: " << m_kernel_time/1.0E+9 << "s | Acc. KLT: " << m_launch_time/1.0E+9 << "s | Kernel calls: " << m_kernel_calls << "]\n";
+#endif
       // 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16:
       ///Breed( cur_pop, tmp_pop, errors );
       Breed( cur_pop, tmp_pop );
