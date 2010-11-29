@@ -52,10 +52,10 @@ void GPonGPU::LoadPoints()
 // -----------------------------------------------------------------------------
 void PPCU::CalculateNDRanges() 
 {
-   if( m_num_points < m_max_wi_size )
+   if( m_num_points < m_max_local_size )
       m_local_size = m_num_points;
    else
-      m_local_size = m_max_wi_size;
+      m_local_size = m_max_local_size;
 
    // One individual por each group
    m_global_size = m_local_size * m_params->m_population_size;
@@ -77,13 +77,13 @@ void PPCU::CalculateNDRanges()
 void PPCE::CalculateNDRanges() 
 {
    // Naïve rule:
-   if( m_params->m_population_size <= m_max_wi_size )
+   if( m_params->m_population_size <= m_max_local_size )
    {
       m_local_size = m_params->m_population_size;
       m_global_size= m_params->m_population_size;
    } else
    {
-      m_local_size = m_max_wi_size;
+      m_local_size = m_max_local_size;
 
       // global size should be evenly divided by m_local_size
       if( m_params->m_population_size % m_local_size == 0 )
@@ -102,7 +102,7 @@ void FPI::CalculateNDRanges()
 {
    // Distribute the points (workload) evenly among the compute units
    m_local_size = std::min( (unsigned) std::ceil( m_num_points / m_max_cu ),
-         (unsigned) m_max_wi_size );
+         (unsigned) m_max_local_size );
    // Make m_global_size be divisible by m_local_size
    m_global_size = m_num_points + m_local_size - (m_num_points % m_local_size); 
 

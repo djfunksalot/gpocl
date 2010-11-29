@@ -540,10 +540,10 @@ void GP::OpenCLInit()
 
    m_max_cu = m_device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
 
-   m_max_wg_size = m_device.getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>();
-   m_max_wi_size = m_device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0];
+   m_max_local_size = std::max( m_device.getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>(),
+                                m_device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0] );
 
-   std::cout << "\nMax CU: " << m_max_cu << " LOCAL_SIZE: " << m_max_wg_size << " WIS[0]:" << m_max_wi_size <<  std::endl;
+   std::cout << "\nCompute units: " << m_max_cu << " Local size: " << m_max_local_size <<  std::endl;
 
 #ifdef PROFILING
    m_queue = cl::CommandQueue( m_context, m_device, CL_QUEUE_PROFILING_ENABLE );

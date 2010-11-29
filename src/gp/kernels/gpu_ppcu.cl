@@ -4,8 +4,7 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
                         __global float* E, __local uint* program )
 {
    __local float PE[LOCAL_SIZE];
-
-   __local unsigned int program_size;
+   __local uint program_size;
 
    CREATE_STACK
 
@@ -40,8 +39,9 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
    for( uint iter = 0; iter < NUM_POINTS/LOCAL_SIZE; ++iter )
    {
 #else
-   for( uint iter = 0; iter < ceil( NUM_POINTS / (float) LOCAL_SIZE); ++iter )
+   for( uint iter = 0; iter < ceil( NUM_POINTS / (float) LOCAL_SIZE ); ++iter )
    {
+      //if( iter == ceil( NUM_POINTS / (float) LOCAL_SIZE) - 1 && lo_id < NUM_POINTS % LOCAL_SIZE )
       if( iter * LOCAL_SIZE + lo_id < NUM_POINTS )
       {
 #endif
@@ -53,12 +53,13 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
             {
                INTERPRETER_CORE
                default:
+                  // Coalesced access pattern
                   PUSH( 0, X[iter * LOCAL_SIZE + NUM_POINTS * AS_INT( program[op] ) + lo_id] );
             }
 
          // -------------------------------
 
-         PE[lo_id] += pown( POP - Y[ iter * LOCAL_SIZE + lo_id ], 2 );
+         PE[lo_id] += pown( POP - Y[iter * LOCAL_SIZE + lo_id], 2 );
 
          // Avoid further calculations if the current one has overflown the float
          // (i.e., it is inf or NaN).
@@ -69,7 +70,7 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
    }
 
    /*
-      Parallel way to perform reduction:
+      Parallel way to perform reduction within the work-group:
 
       | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |     LOCAL_SIZE = 8
 
@@ -99,7 +100,7 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
             of two value) then we need to ensure that we will not read past LOCAL_SIZE. */
          if( lo_id + d/2 < LOCAL_SIZE )
 #endif
-         PE[lo_id] += PE[lo_id + d/2];
+            PE[lo_id] += PE[lo_id + d/2];
       }
    }
 

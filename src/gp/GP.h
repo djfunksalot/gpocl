@@ -278,8 +278,7 @@ protected:
    cl::Kernel m_kernel;
 
    size_t m_max_cu;
-   size_t m_max_wg_size;
-   size_t m_max_wi_size;
+   size_t m_max_local_size;
 
    size_t m_global_size;
    size_t m_local_size;

@@ -29,12 +29,13 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
             {
                INTERPRETER_CORE
                default:
+                  // Coalesced access pattern
                   PUSH( 0, X[iter + NUM_POINTS * AS_INT( program[op] )] );
             }
 
          // -------------------------------
 
-         error += pown( POP - Y[ iter ], 2 );
+         error += pown( POP - Y[iter], 2 );
 
          // Avoid further calculations if the current one has overflown the
          // float (i.e., it is inf or NaN).
