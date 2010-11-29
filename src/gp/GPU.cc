@@ -61,7 +61,7 @@ void PPCU::CalculateNDRanges()
    m_global_size = m_local_size * m_params->m_population_size;
 
    if( MaximumTreeSize() <= m_local_size )
-      m_compile_flags += " -D MAX_TREE_SIZE_IS_LESS_THAN_LOCAL_SIZE";
+      m_compile_flags += "-D PROGRAM_TREE_FITS_IN_LOCAL_SIZE";
 
    if( ! util::IsPowerOf2( m_local_size ) )
       m_compile_flags += " -D LOCAL_SIZE_IS_NOT_POWER_OF_2";
@@ -111,7 +111,7 @@ void FPI::CalculateNDRanges()
       m_global_size += m_local_size - (m_num_points % m_local_size); 
 
    if( MaximumTreeSize() <= m_local_size )
-      m_compile_flags += "-D MAX_TREE_SIZE_IS_LESS_THAN_LOCAL_SIZE";
+      m_compile_flags += "-D PROGRAM_TREE_FITS_IN_LOCAL_SIZE";
 }
 
 // -----------------------------------------------------------------------------

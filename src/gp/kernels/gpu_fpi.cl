@@ -22,15 +22,16 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 
       barrier(CLK_LOCAL_MEM_FENCE);
 
-#ifdef MAX_TREE_SIZE_IS_LESS_THAN_LOCAL_SIZE
+#ifdef PROGRAM_TREE_FITS_IN_LOCAL_SIZE
       if( lo_id < program_size ) program[lo_id] = pop[(MAX_TREE_SIZE + 1) * p + lo_id + 1];
 #else   
-      // Too few workers for the program_size, thus we need to do the work in rounds.
-      uint rounds = ceil( program_size / (float) LOCAL_SIZE );
-      for( uint i = 0; i < rounds; ++i )
+      // Too few workers for the program_size, thus we need to do the work iteratively
+      for( uint i = 0; i < ceil( program_size / (float) LOCAL_SIZE ); ++i )
       {
-         if( i * rounds + lo_id < program_size )
-            program[i * rounds + lo_id] = pop[(MAX_TREE_SIZE + 1) * p + (i * rounds + lo_id) + 1];
+         uint index = i * LOCAL_SIZE + lo_id;
+
+         if( index < program_size )
+            program[index] =   pop[(MAX_TREE_SIZE + 1) * p + index + 1];
       } 
 #endif
 
