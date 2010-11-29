@@ -69,8 +69,8 @@ void PPCU::CalculateNDRanges()
    m_compile_flags += " -D LOCAL_SIZE_NEXT_POWER_OF_2=" 
                       + util::ToString( util::NextPowerOf2( m_local_size ) );
 
-   // FIXME: Remove these restrictions! (need to change the kernel)
-   assert( m_num_points % m_local_size == 0 );
+   if( m_num_points % m_local_size == 0 )
+      m_compile_flags += " -D NUM_POINTS_IS_DIVISIBLE_BY_LOCAL_SIZE";
 }
 
 // -----------------------------------------------------------------------------

@@ -33,27 +33,38 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 
    PE[lo_id] = 0.0f;
 
-   // FIXME: handle cases where num_points is not divided by LOCAL_SIZE
+#ifdef NUM_POINTS_IS_DIVISIBLE_BY_LOCAL_SIZE
+   /* When we know that NUM_POINTS is divisible by LOCAL_SIZE then we can avoid a
+      comparison in each iteration due to the guarantee of not having work-items
+      accessing beyond the available amount of points. */
    for( uint iter = 0; iter < NUM_POINTS/LOCAL_SIZE; ++iter )
+#else
+   for( uint iter = 0; iter < ceil( NUM_POINTS / (float) LOCAL_SIZE); ++iter )
    {
-      // -------------------------------
-      // Calls the interpreter (C macro)
-      // -------------------------------
-      for( int op = program_size; op-- ; )
-         switch( INDEX( program[op] ) )
-         {
-            INTERPRETER_CORE
-            default:
-               PUSH( 0, X[iter * LOCAL_SIZE + NUM_POINTS * AS_INT( program[op] ) + lo_id] );
-         }
+      if( iter * LOCAL_SIZE + lo_id < NUM_POINTS )
+      {
+#endif
+         // -------------------------------
+         // Calls the interpreter (C macro)
+         // -------------------------------
+         for( int op = program_size; op-- ; )
+            switch( INDEX( program[op] ) )
+            {
+               INTERPRETER_CORE
+               default:
+                  PUSH( 0, X[iter * LOCAL_SIZE + NUM_POINTS * AS_INT( program[op] ) + lo_id] );
+            }
 
-      // -------------------------------
+         // -------------------------------
 
-      PE[lo_id] += pown( POP - Y[ iter * LOCAL_SIZE + lo_id ], 2 );
+         PE[lo_id] += pown( POP - Y[ iter * LOCAL_SIZE + lo_id ], 2 );
 
-      // Avoid further calculations if the current one has overflown the float
-      // (i.e., it is inf or NaN).
-      if( isinf( PE[lo_id] ) || isnan( PE[lo_id] ) ) break;
+         // Avoid further calculations if the current one has overflown the float
+         // (i.e., it is inf or NaN).
+         if( isinf( PE[lo_id] ) || isnan( PE[lo_id] ) ) break;
+#ifndef NUM_POINTS_IS_DIVISIBLE_BY_LOCAL_SIZE
+      }
+#endif
    }
 
    /*
