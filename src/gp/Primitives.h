@@ -98,6 +98,7 @@ public:
 
    bool m_need_identity;
    unsigned m_max_arity;
+   unsigned m_min_arity_user_given_function;
    unsigned m_min_Y;
    unsigned m_max_Y;
 private:

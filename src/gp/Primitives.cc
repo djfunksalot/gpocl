@@ -33,6 +33,7 @@
 
 // -----------------------------------------------------------------------------
 Primitives::Primitives(): m_need_identity( false ), 
+   m_min_arity_user_given_function( 0 ),
    m_min_Y( std::numeric_limits<unsigned>::max() ),
    m_max_Y( std::numeric_limits<unsigned>::min() )
 {
@@ -245,6 +246,9 @@ void Primitives::Load( unsigned x_dim, unsigned max_gen_size, const std::string&
    {
       if( !per_arity[i].empty() ) // there is at least one primitive with such arity
       {
+         if( m_min_arity_user_given_function == 0 )
+            m_min_arity_user_given_function = i;
+
          m_primitives.insert( m_primitives.end(), per_arity[i].begin(), per_arity[i].end() );
          m_primitives_boundaries[i].first = m_primitives.size() - per_arity[i].size();
          m_primitives_boundaries[i].second = m_primitives.size() - 1;
@@ -270,6 +274,8 @@ void Primitives::Load( unsigned x_dim, unsigned max_gen_size, const std::string&
    {
       std::cout << "Boundaries " << i << " : " << m_primitives_boundaries[i].first << "," << m_primitives_boundaries[i].second << std::endl;
    }
+
+   std::cout << "\nMinimum arity of user given function: " << m_min_arity_user_given_function << std::endl;
 #endif
 }
 
@@ -278,24 +284,30 @@ cl_uint Primitives::RandomNode( unsigned min, unsigned max ) const
 {
    if( m_need_identity && (min == 1) )
    {
-      if( max == 1 ) 
+      if( max < m_min_arity_user_given_function ) 
       {
          /*
-            There isn't originally a function of one argument, the user didn't give us.
-            But we need exactly a function of *one* argument. So we are going to use
-            the "fake" identity function, which just returns the value of its operand.
+            There isn't originally a *function* of less than
+            'm_min_arity_user_given_function' arguments, the user didn't give
+            us.  But we need a function *within* this range of required
+            arguments. So we are going to use the "fake" one-arity identity
+            function, which just returns the value of its operand.
           */
          return PackNode( 1, GPF_IDENTITY );
       }
-      else 
+      else // max >= m_min_arity_user_given_function
       {
          /*
-            Hmmm... GP needs a function of *one* or *more* arguments. Since we only
-            use GPF_IDENTITY when it is really necessary, we will increment 'min' so
-            that Random will avoid choosing a non existent function of one argument.
-            At this point there is only the fake GPF_IDENTITY as one argument function. 
+            Hmmm... GP needs a function of 'm_min_arity_user_given_function' or
+          *more* arguments. Since we only use GPF_IDENTITY when it is really
+          necessary, we will increment 'min' to
+          'm_min_arity_user_given_function' so that Random will avoid choosing
+          a non user given function of less than
+          'm_min_arity_user_given_function' arguments.  At this point there is
+          only the fake GPF_IDENTITY as a function accepting less than
+          'm_min_arity_user_given_function' arguments. 
           */
-         ++min;
+         min = m_min_arity_user_given_function;
       }
    }
 

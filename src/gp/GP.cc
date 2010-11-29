@@ -238,6 +238,7 @@ void GP::Crossover( const cl_uint* mom, const cl_uint* dad, cl_uint* child ) con
    std::cout << "\nMom: "; PrintProgram( mom );
    std::cout << "\nDad: "; PrintProgram( dad );
    */
+
    // Actual crossover
    for( i = 1; i < pt_mom; i++ )
    {
@@ -255,7 +256,7 @@ void GP::Crossover( const cl_uint* mom, const cl_uint* dad, cl_uint* child ) con
 
       i++;
    }
-  // std::cout << "\nSon: "; PrintProgram( child );
+   //std::cout << "\nSon: "; PrintProgram( child );
 
    assert( TreeSize( child + 1 ) == ProgramSize( child ) );
 }
