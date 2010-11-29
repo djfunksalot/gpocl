@@ -4,6 +4,7 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
                         __global float* E, __local uint* program )
 {
    __local uint program_size;
+
    CREATE_STACK
 
    uint gl_id = get_global_id( 0 );
@@ -21,11 +22,11 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 
       barrier(CLK_LOCAL_MEM_FENCE);
 
-#ifdef MAX_TREE_SIZE_IS_LESS_THAN_WGS
+#ifdef MAX_TREE_SIZE_IS_LESS_THAN_LOCAL_SIZE
       if( lo_id < program_size ) program[lo_id] = pop[(MAX_TREE_SIZE + 1) * p + lo_id + 1];
 #else   
       // Too few workers for the program_size, thus we need to do the work in rounds.
-      uint rounds = ceil( program_size / (float) WGS );
+      uint rounds = ceil( program_size / (float) LOCAL_SIZE );
       for( uint i = 0; i < rounds; ++i )
       {
          if( i * rounds + lo_id < program_size )
@@ -34,7 +35,6 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 #endif
 
       barrier(CLK_LOCAL_MEM_FENCE);
-
 
       if( gl_id < NUM_POINTS )
       { 
@@ -57,7 +57,7 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 
          // -------------------------------
 
-         error = pown( POP - Y[ gl_id ], 2 );
+         error = pown( POP - Y[gl_id], 2 );
 
          // Fetch the errors from all the others work-items and store the sum in E[p]
          // FIXME (just to test, storing error only for point 0)

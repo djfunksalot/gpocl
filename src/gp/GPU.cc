@@ -101,10 +101,14 @@ void PPCE::CalculateNDRanges()
 void FPI::CalculateNDRanges() 
 {
    // Distribute the points (workload) evenly among the compute units
-   m_local_size = std::min( (unsigned) std::ceil( m_num_points / m_max_cu ),
+   m_local_size = std::min( (unsigned) std::ceil( m_num_points / (float) m_max_cu ),
          (unsigned) m_max_local_size );
-   // Make m_global_size be divisible by m_local_size
-   m_global_size = m_num_points + m_local_size - (m_num_points % m_local_size); 
+   
+   m_global_size = m_num_points;
+
+   if( m_global_size % m_local_size != 0 )
+      // Make m_global_size be divisible by m_local_size
+      m_global_size += m_local_size - (m_num_points % m_local_size); 
 
    if( MaximumTreeSize() <= m_local_size )
       m_compile_flags += "-D MAX_TREE_SIZE_IS_LESS_THAN_LOCAL_SIZE";
