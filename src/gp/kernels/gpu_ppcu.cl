@@ -87,11 +87,18 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
         L----> total sum is stored on the first work-item
     */
          
-   for( uint s = LOCAL_SIZE_NEXT_POWER_OF_2 / 2; s > 0; s >>= 1 ) 
+   for( uint s = LOCAL_SIZE_ROUNDED_UP_TO_POWER_OF_2 / 2; s > 0; s >>= 1 ) 
    {
       barrier(CLK_LOCAL_MEM_FENCE);
 
-      if( lo_id < s ) PE[lo_id] += PE[lo_id + s];
+#ifdef LOCAL_SIZE_IS_POWER_OF_2
+      if( lo_id < s )
+#else
+      /* LOCAL_SIZE is not power of 2, so we need to perform an additional
+       * check to ensure that no access beyond PE's range will occur. */ 
+      if( (lo_id < s) && (lo_id + s < LOCAL_SIZE) )
+#endif 
+         PE[lo_id] += PE[lo_id + s];
    }
 
    // Store on the global memory (to be read by the host)

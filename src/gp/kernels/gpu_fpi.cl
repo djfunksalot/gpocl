@@ -1,23 +1,19 @@
-//__kernel void evaluate( __global const uint* pop, __global const float* X, __global const float* Y,
- //                       __global float* E )
 __kernel void evaluate( __global const uint* pop, __global const float* X, __global const float* Y,
-                        __global float* E, __local uint* program )
+      __global float* E, __local uint* program )
 {
+   __local float PE[LOCAL_SIZE];
    __local uint program_size;
 
    CREATE_STACK
 
    uint gl_id = get_global_id( 0 );
+   uint gr_id = get_group_id( 0 );
    uint lo_id = get_local_id( 0 );
 
-   //uint program_size;
-  // __global const uint* program;
    float error;
 
    for( unsigned p = 0; p < POP_SIZE; ++p )
    {
-      // TODO: use local memory
-      // Get the actual program's size
       if( lo_id == 0 ) program_size = pop[(MAX_TREE_SIZE + 1) * p];
 
       barrier(CLK_LOCAL_MEM_FENCE);
@@ -37,17 +33,10 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 
       barrier(CLK_LOCAL_MEM_FENCE);
 
+      PE[lo_id] = 0.0f;
+
       if( gl_id < NUM_POINTS )
       { 
-
-         /*
-         // Get the actual program's size
-         program_size = pop[(MAX_TREE_SIZE + 1) * p];
-         // Make program points to the actual program being evaluated
-         program =     &pop[(MAX_TREE_SIZE + 1) * p + 1];
-          */
-
-         error = 0.0f;
          for( int op = program_size; op-- ; )
             switch( INDEX( program[op] ) )
             {
@@ -58,11 +47,29 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 
          // -------------------------------
 
-         error = pown( POP - Y[gl_id], 2 );
-
-         // Fetch the errors from all the others work-items and store the sum in E[p]
-         // FIXME (just to test, storing error only for point 0)
-         if( gl_id == 0 ) E[p] = ( isinf( error ) || isnan( error ) ) ? MAX_FLOAT : error;
+         PE[lo_id] = pown( POP - Y[gl_id], 2 );
       }
+
+      // Parallel reduction
+
+      for( uint s = LOCAL_SIZE_ROUNDED_UP_TO_POWER_OF_2 / 2; s > 0; s >>= 1 ) 
+      {
+         barrier(CLK_LOCAL_MEM_FENCE);
+
+#ifdef LOCAL_SIZE_IS_POWER_OF_2
+         if( lo_id < s )
+#else
+            /* LOCAL_SIZE is not power of 2, so we need to perform an additional
+             * check to ensure that no access beyond PE's range will occur. */ 
+            if( (lo_id < s) && (lo_id + s < LOCAL_SIZE) )
+#endif 
+               PE[lo_id] += PE[lo_id + s];
+      }
+
+      // We will store this group reduction into the global memory.
+      // FIXME: We need to expand E and perform reduction in the global memory
+      // (i.e. reduce the partial sums of each CU)
+      if( lo_id == 0 ) 
+         E[gr_id] = ( isinf( PE[0] ) || isnan( PE[0] ) ) ? MAX_FLOAT : PE[0];
    }
 }

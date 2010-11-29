@@ -63,8 +63,11 @@ void PPCU::CalculateNDRanges()
    if( MaximumTreeSize() <= m_local_size )
       m_compile_flags += "-D PROGRAM_TREE_FITS_IN_LOCAL_SIZE";
 
-   m_compile_flags += " -D LOCAL_SIZE_NEXT_POWER_OF_2=" 
+   m_compile_flags += " -D LOCAL_SIZE_ROUNDED_UP_TO_POWER_OF_2=" 
                       + util::ToString( util::NextPowerOf2( m_local_size ) );
+
+   if( util::IsPowerOf2( m_local_size ) )
+      m_compile_flags += " -D LOCAL_SIZE_IS_POWER_OF_2";
 
    if( m_num_points % m_local_size == 0 )
       m_compile_flags += " -D NUM_POINTS_IS_DIVISIBLE_BY_LOCAL_SIZE";
@@ -109,6 +112,12 @@ void FPI::CalculateNDRanges()
 
    if( MaximumTreeSize() <= m_local_size )
       m_compile_flags += "-D PROGRAM_TREE_FITS_IN_LOCAL_SIZE";
+
+   m_compile_flags += " -D LOCAL_SIZE_ROUNDED_UP_TO_POWER_OF_2=" 
+                      + util::ToString( util::NextPowerOf2( m_local_size ) );
+
+   if( util::IsPowerOf2( m_local_size ) )
+      m_compile_flags += " -D LOCAL_SIZE_IS_POWER_OF_2";
 }
 
 // -----------------------------------------------------------------------------
