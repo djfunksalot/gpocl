@@ -280,11 +280,11 @@ protected:
    std::string m_kernel_src;
    cl::Kernel m_kernel;
 
-   size_t m_max_cu;
-   size_t m_max_local_size;
+   unsigned m_max_cu;
+   unsigned m_max_local_size;
 
-   size_t m_global_size;
-   size_t m_local_size;
+   unsigned m_global_size;
+   unsigned m_local_size;
 
    std::string m_compile_flags;
 #ifdef PROFILING
