@@ -60,7 +60,7 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 
          // -------------------------------
 
-         PE[lo_id] += pown( POP - Y[iter * LOCAL_SIZE + lo_id], 2 );
+         PE[lo_id] += ERROR_METRIC( POP, Y[iter * LOCAL_SIZE + lo_id] );
 
          // Avoid further calculations if the current one has overflown the float
          // (i.e., it is inf or NaN).

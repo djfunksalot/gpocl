@@ -35,7 +35,7 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 
          // -------------------------------
 
-         error += pown( POP - Y[iter], 2 );
+         error += ERROR_METRIC( POP, Y[iter] );
 
          // Avoid further calculations if the current one has overflown the
          // float (i.e., it is inf or NaN).

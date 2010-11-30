@@ -47,7 +47,7 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 
          // -------------------------------
 
-         PE[lo_id] = pown( POP - Y[gl_id], 2 );
+         PE[lo_id] = ERROR_METRIC( POP, Y[gl_id] );
       }
 
       // Parallel reduction
