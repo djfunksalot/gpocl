@@ -86,20 +86,20 @@ void PPCU::CalculateNDRanges()
    else
       m_local_size = m_max_local_size;
 
-   // One individual por each group
+   // One individual per work-group
    m_global_size = m_local_size * m_params->m_population_size;
-
-   if( MaximumTreeSize() <= m_local_size )
-      m_compile_flags += "-D PROGRAM_TREE_FITS_IN_LOCAL_SIZE";
 
    m_compile_flags += " -D LOCAL_SIZE_ROUNDED_UP_TO_POWER_OF_2=" 
                       + util::ToString( util::NextPowerOf2( m_local_size ) );
 
-   if( util::IsPowerOf2( m_local_size ) )
-      m_compile_flags += " -D LOCAL_SIZE_IS_POWER_OF_2";
+   if( MaximumTreeSize() > m_local_size )
+      m_compile_flags += "-D PROGRAM_TREE_DOES_NOT_FIT_IN_LOCAL_SIZE";
 
-   if( m_num_points % m_local_size == 0 )
-      m_compile_flags += " -D NUM_POINTS_IS_DIVISIBLE_BY_LOCAL_SIZE";
+   if( ! util::IsPowerOf2( m_local_size ) )
+      m_compile_flags += " -D LOCAL_SIZE_IS_NOT_POWER_OF_2";
+
+   if( m_num_points % m_local_size != 0 )
+      m_compile_flags += " -D NUM_POINTS_IS_NOT_DIVISIBLE_BY_LOCAL_SIZE";
 }
 
 // -----------------------------------------------------------------------------

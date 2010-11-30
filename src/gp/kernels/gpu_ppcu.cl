@@ -16,7 +16,7 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 
    barrier(CLK_LOCAL_MEM_FENCE);
 
-#ifdef PROGRAM_TREE_FITS_IN_LOCAL_SIZE
+#ifndef PROGRAM_TREE_DOES_NOT_FIT_IN_LOCAL_SIZE
    if( lo_id < program_size ) program[lo_id] = pop[(MAX_TREE_SIZE + 1) * gr_id + lo_id + 1];
 #else   
    // Too few workers for the program_size, thus we need to do the work iteratively
@@ -33,7 +33,7 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 
    PE[lo_id] = 0.0f;
 
-#ifdef NUM_POINTS_IS_DIVISIBLE_BY_LOCAL_SIZE
+#ifndef NUM_POINTS_IS_NOT_DIVISIBLE_BY_LOCAL_SIZE
    /* When we know that NUM_POINTS is divisible by LOCAL_SIZE then we can avoid a
       comparison in each iteration due to the guarantee of not having work-items
       accessing beyond the available amount of points. */
@@ -66,7 +66,7 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
          // (i.e., it is inf or NaN).
          //if( isinf( PE[lo_id] ) || isnan( PE[lo_id] ) ) { printf( "\n\n\n\n\nNaN: %d,%d\n\n\n\n\n", gr_id, lo_id); break;}
          if( isinf( PE[lo_id] ) || isnan( PE[lo_id] ) ) break;
-#ifndef NUM_POINTS_IS_DIVISIBLE_BY_LOCAL_SIZE
+#ifdef NUM_POINTS_IS_NOT_DIVISIBLE_BY_LOCAL_SIZE
       }
 #endif
    }
@@ -92,7 +92,7 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
    {
       barrier(CLK_LOCAL_MEM_FENCE);
 
-#ifdef LOCAL_SIZE_IS_POWER_OF_2
+#ifndef LOCAL_SIZE_IS_NOT_POWER_OF_2
       if( lo_id < s )
 #else
       /* LOCAL_SIZE is not power of 2, so we need to perform an additional
