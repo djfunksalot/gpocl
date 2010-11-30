@@ -18,7 +18,7 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 
       barrier(CLK_LOCAL_MEM_FENCE);
 
-#ifdef PROGRAM_TREE_FITS_IN_LOCAL_SIZE
+#ifndef PROGRAM_TREE_DOES_NOT_FIT_IN_LOCAL_SIZE
       if( lo_id < program_size ) program[lo_id] = pop[(MAX_TREE_SIZE + 1) * p + lo_id + 1];
 #else   
       // Too few workers for the program_size, thus we need to do the work iteratively
@@ -56,7 +56,7 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
       {
          barrier(CLK_LOCAL_MEM_FENCE);
 
-#ifdef LOCAL_SIZE_IS_POWER_OF_2
+#ifndef LOCAL_SIZE_IS_NOT_POWER_OF_2
          if( lo_id < s )
 #else
             /* LOCAL_SIZE is not power of 2, so we need to perform an additional

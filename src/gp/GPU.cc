@@ -110,41 +110,40 @@ void PPCE::CalculateNDRanges()
    m_local_size = std::min( m_max_local_size, 
                             (unsigned) ceil( m_params->m_population_size/(float) m_max_cu ) ) ;
 
+   m_global_size = m_params->m_population_size;
+
    // It is better to have global size divisible by local size
-   if( m_params->m_population_size % m_local_size == 0 )
-   {
-      m_global_size = m_params->m_population_size;
-   }
-   else 
-   {
-      // round to the next divisible size (the kernel will ensure that
-      // no access outside the population range will occur.
-      m_global_size = m_params->m_population_size + m_local_size 
-         - (m_params->m_population_size % m_local_size );
-   }
+   if( m_global_size % m_local_size != 0 )
+      // Round to the next divisible size (the kernel will ensure that
+      // no access outside the population range will occur).
+      m_global_size += m_local_size - (m_global_size % m_local_size);
 }
 
 // -----------------------------------------------------------------------------
 void FPI::CalculateNDRanges() 
 {
-   // Distribute the points (workload) evenly among the compute units
-   m_local_size = std::min( (unsigned) std::ceil( m_num_points / (float) m_max_cu ),
-         (unsigned) m_max_local_size );
-   
+   // Evenly distribute the workload among the compute units (but avoiding local size
+   // being more than the maximum allowed.
+   m_local_size = std::min( m_max_local_size, 
+                            (unsigned) ceil( m_num_points/(float) m_max_cu ) );
+
    m_global_size = m_num_points;
 
+   // It is better to have global size divisible by local size
    if( m_global_size % m_local_size != 0 )
-      // Make m_global_size be divisible by m_local_size
-      m_global_size += m_local_size - (m_num_points % m_local_size); 
+      // Round to the next divisible size (the kernel will ensure that
+      // no access outside the population range will occur).
+      m_global_size += m_local_size - (m_global_size % m_local_size); 
 
-   if( MaximumTreeSize() <= m_local_size )
-      m_compile_flags += "-D PROGRAM_TREE_FITS_IN_LOCAL_SIZE";
-
+   // OpenCL compiler flags
    m_compile_flags += " -D LOCAL_SIZE_ROUNDED_UP_TO_POWER_OF_2=" 
                       + util::ToString( util::NextPowerOf2( m_local_size ) );
 
-   if( util::IsPowerOf2( m_local_size ) )
-      m_compile_flags += " -D LOCAL_SIZE_IS_POWER_OF_2";
+   if( MaximumTreeSize() > m_local_size )
+      m_compile_flags += "-D PROGRAM_TREE_DOES_NOT_FIT_IN_LOCAL_SIZE";
+
+   if( ! util::IsPowerOf2( m_local_size ) )
+      m_compile_flags += " -D LOCAL_SIZE_IS_NOT_POWER_OF_2";
 }
 
 // -----------------------------------------------------------------------------
