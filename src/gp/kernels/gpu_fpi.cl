@@ -35,8 +35,10 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
 
       PE[lo_id] = 0.0f;
 
+#ifdef NUM_POINTS_IS_NOT_DIVISIBLE_BY_LOCAL_SIZE
       if( gl_id < NUM_POINTS )
       { 
+#endif
          for( int op = program_size; op-- ; )
             switch( INDEX( program[op] ) )
             {
@@ -48,8 +50,9 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
          // -------------------------------
 
          PE[lo_id] = ERROR_METRIC( POP, Y[gl_id] );
+#ifdef NUM_POINTS_IS_NOT_DIVISIBLE_BY_LOCAL_SIZE
       }
-
+#endif
       // Parallel reduction
 
       for( uint s = LOCAL_SIZE_ROUNDED_UP_TO_POWER_OF_2 / 2; s > 0; s >>= 1 ) 

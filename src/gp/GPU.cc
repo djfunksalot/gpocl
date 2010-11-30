@@ -131,9 +131,12 @@ void FPI::CalculateNDRanges()
 
    // It is better to have global size divisible by local size
    if( m_global_size % m_local_size != 0 )
+   {
+      m_compile_flags += " -D NUM_POINTS_IS_NOT_DIVISIBLE_BY_LOCAL_SIZE";
       // Round to the next divisible size (the kernel will ensure that
       // no access outside the population range will occur).
       m_global_size += m_local_size - (m_global_size % m_local_size); 
+   }
 
    // OpenCL compiler flags
    m_compile_flags += " -D LOCAL_SIZE_ROUNDED_UP_TO_POWER_OF_2=" 
