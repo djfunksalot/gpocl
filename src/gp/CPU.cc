@@ -46,7 +46,6 @@ GPonCPU::GPonCPU( Params& p ): GP( p, CL_DEVICE_TYPE_CPU )
 // -----------------------------------------------------------------------------
 void GPonCPU::LoadPoints()
 {
-   // GP::LoadPoints( m_points );
    std::vector<std::vector<cl_float> > tmp_X;
    GP::LoadPoints( tmp_X );
 

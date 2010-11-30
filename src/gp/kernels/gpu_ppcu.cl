@@ -1,4 +1,4 @@
-#pragma OPENCL EXTENSION cl_amd_printf : enable
+//#pragma OPENCL EXTENSION cl_amd_printf : enable
 
 __kernel void evaluate( __global const uint* pop, __global const float* X, __global const float* Y,
                         __global float* E, __local uint* program )

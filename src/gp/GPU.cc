@@ -35,8 +35,37 @@ void GPonGPU::LoadPoints()
    // Allocate enough memory (linear) to hold the transposed version
    m_X = new cl_float[ m_num_points * m_x_dim ];
 
-   // Transposition
-   // TODO: Acrescentar gráfico explicativo!
+   /*
+     TRANSPOSITION (for coalesced access on the GPU)
+
+                                Transformed and linearized data points
+                                 +---------++---------+   +---------+
+                                 | 1 2    q|| 1 2    q|   | 1 2    q|
+           +-------------------> |X X ...X ||X X ...X |...|X X ...X |
+           |                     | 1 1    1|| 2 2    2|   | p p    p|
+           |                     +---------++---------+   +---------+
+           |                                ^             ^
+           |   +----------------------------+             |
+           |   |                                          |
+           |   |      +-----------------------------------+
+         +--++--+   +--+
+         | 1|| 1|   | 1|
+         |X ||X |...|X |
+         | 1|| 2|   | p|
+         |  ||  |   |  |
+         | 2|| 2|   | q|
+         |X ||X |...|X |
+         | 1|| 2|   | p|
+         |. ||. |   |. |
+         |. ||. |   |. |
+         |. ||. |   |. |
+         | q|| q|   | q|
+         |X ||X |...|X |
+         | 1|| 2|   | p|
+         +--++--+   +--+
+      Original data points
+
+    */
    unsigned pos = 0;
    for( unsigned j = 0; j < tmp_X[0].size(); ++j )
       for( unsigned i = 0; i < tmp_X.size(); ++i )
