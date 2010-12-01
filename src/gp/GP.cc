@@ -542,6 +542,11 @@ void GP::OpenCLInit()
 
    std::cout << "\nCompute units: " << m_max_cu << " Local size: " << m_max_local_size <<  std::endl;
 
+   // Check whether our Y array (expected values) cannot be stored in the
+   // __constant address space
+   if( m_num_points * sizeof(cl_float) > m_device.getInfo<CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE>() )
+     m_compile_flags += " -D Y_DOES_NOT_FIT_IN_CONSTANT_BUFFER";
+
 #ifdef PROFILING
    m_queue = cl::CommandQueue( m_context, m_device, CL_QUEUE_PROFILING_ENABLE );
 #else

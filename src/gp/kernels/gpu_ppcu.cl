@@ -1,7 +1,14 @@
 //#pragma OPENCL EXTENSION cl_amd_printf : enable
 
-__kernel void evaluate( __global const uint* pop, __global const float* X, __global const float* Y,
-                        __global float* E, __local uint* program )
+__kernel void evaluate( __global const uint* pop, __global const float* X, 
+#ifdef Y_DOES_NOT_FIT_IN_CONSTANT_BUFFER
+      __global const 
+#else
+      __constant 
+#endif
+      float* Y, __global float* E, __local uint* program )
+//__kernel void evaluate( __global const uint* pop, __global const float* X, __global const float* Y,
+                        //__global float* E, __local uint* program )
 {
    __local float PE[LOCAL_SIZE];
    __local uint program_size;
