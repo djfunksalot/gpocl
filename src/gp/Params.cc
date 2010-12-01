@@ -90,7 +90,7 @@ Params::ShowUsage( const char* app = "gpocl" ) const // -h or --help
    << "     tolerance of error (stop criterion) [default = none]\n"
    << "\n"
    << "OpenCL options:\n"
-   << "  -cl-mls <n>, --cl-maximum-local-size <n>\n";
+   << "  -ocl-mls <n>, --ocl-maximum-local-size <n>\n";
 }
 
 //----------------------------------------------------------------------
@@ -133,7 +133,7 @@ Params::Initialize()
 
    Opts.Float.Add( "-et", "--error-tolerance", -1.0, 0.0 );
 
-   Opts.Int.Add( "-cl-mls", "--cl-maximum-local-size", 0, 1 );
+   Opts.Int.Add( "-ocl-mls", "--ocl-maximum-local-size", 0, 1 );
    // -- Get the options! ----------------
    /* Right now, the 'Opts' object will process the command-line, i.e.,
     * it will try to recognize the options and their respective arguments. */
@@ -208,7 +208,7 @@ Params::Initialize()
    m_output_file = Opts.String.Get( "-o" );
 
    // ---- OpenCL ------------------------------------------
-   m_max_local_size = Opts.Int.Get( "-cl-mls" );
+   m_max_local_size = Opts.Int.Get( "-ocl-mls" );
 
    // ---------------
    return true;
