@@ -544,8 +544,13 @@ void GP::OpenCLInit()
 
    m_max_cu = m_device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
 
-   m_max_local_size = std::max( m_device.getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>(),
+   m_max_local_size = std::min( m_device.getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>(),
                                 m_device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0] );
+
+   // Check if the user gave us a desirable maximum local size. If his/her proposed
+   // size is within the hardware limits lets pick it:
+   if( m_params->m_max_local_size > 0 && m_params->m_max_local_size < m_max_local_size )
+      m_max_local_size = m_params->m_max_local_size;
 
    std::cout << "\nCompute units: " << m_max_cu << " Local size: " << m_max_local_size <<  std::endl;
 

@@ -74,8 +74,6 @@ Params::ShowUsage( const char* app = "gpocl" ) const // -h or --help
    << "     number of generations, n>0 [default = 1]\n"
    << "  -s <n>, --seed <n>\n"
    << "     GP initialization seed, n>=0 [default = 0, random]\n"
-   //<< "  -rs, --random-seed\n"
-  // << "     use random GP seed (same as -s 0)\n"
    << "  -ps <n>, --population-size <n>\n"
    << "     number of individuals [default = 256]\n"
    << "  -cp <f>, --crossover-probability <f>\n"
@@ -89,7 +87,10 @@ Params::ShowUsage( const char* app = "gpocl" ) const // -h or --help
    << "  -ms <n>, --maximum-size <n>\n"
    << "     maximum program size [default = 20]\n"
    << "  -et <n>, --error-tolerance <f>\n"
-   << "     tolerance of error (stop criterion) [default = none]\n";
+   << "     tolerance of error (stop criterion) [default = none]\n"
+   << "\n"
+   << "OpenCL options:\n"
+   << "  -cl-mls <n>, --cl-maximum-local-size <n>\n";
 }
 
 //----------------------------------------------------------------------
@@ -112,10 +113,8 @@ Params::Initialize()
    // Function/terminal sets option
    Opts.String.Add( "-p", "--primitives", "+,-,*,/" );
    Opts.Bool.Add( "-pp", "--print-primitives" );
- //  Opts.String.Add( "-ts", "--terminal-set", "vars,c_1,c_2,c_pi,c_ephemeral" );
 
    Opts.Bool.Add( "-cpu", "--cpu" );
-  // Opts.Bool.Add( "-gpu", "--gpu" );
    Opts.Int.Add( "-cpu", "--cpu", 1, 1, numeric_limits<int>::max() ).UnSet( CmdLine::NO_VALUE );
    Opts.String.Add( "-gpu", "--gpu", "ppcu", "fpi", "fpc", "ppcu", "ppce", NULL );
 
@@ -123,7 +122,6 @@ Params::Initialize()
    Opts.Int.Add( "-g", "--generations", 1, 1, numeric_limits<int>::max() );
 
    // Seed options
-   //Opts.Bool.Add( "-rs", "--random-seed" );
    Opts.Int.Add( "-s", "--seed", 0, 0, numeric_limits<long>::max() );
 
    Opts.Int.Add( "-ps", "--population-size", 256, 5, numeric_limits<int>::max() );
@@ -134,6 +132,8 @@ Params::Initialize()
    Opts.Int.Add( "-ms", "--maximum-size", 20, 1, numeric_limits<int>::max() );
 
    Opts.Float.Add( "-et", "--error-tolerance", -1.0, 0.0 );
+
+   Opts.Int.Add( "-cl-mls", "--cl-maximum-local-size", 0, 1 );
    // -- Get the options! ----------------
    /* Right now, the 'Opts' object will process the command-line, i.e.,
     * it will try to recognize the options and their respective arguments. */
@@ -190,9 +190,6 @@ Params::Initialize()
    m_number_of_generations = Opts.Int.Get( "-g" );
 
    // -- Initialization seed
- //  if( Opts.Bool.Get( "-rs" ) ) 
-  //    m_seed = 0;
-  // else 
    m_seed = Opts.Int.Get( "-s" );
 
    m_population_size = Opts.Int.Get( "-ps" );
@@ -209,6 +206,9 @@ Params::Initialize()
    m_error_tolerance = Opts.Float.Get( "-et" );
 
    m_output_file = Opts.String.Get( "-o" );
+
+   // ---- OpenCL ------------------------------------------
+   m_max_local_size = Opts.Int.Get( "-cl-mls" );
 
    // ---------------
    return true;
