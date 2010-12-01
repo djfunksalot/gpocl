@@ -618,7 +618,7 @@ void GP::BuildKernel()
    /* To avoid redundant switch cases in the kernel, we will add only those cases clauses 
       that correspond to the subset of primitives given by the user. */
    std::string interpreter = "#define INTERPRETER_CORE" + (m_primitives.m_need_identity ? 
-            " case " + util::ToString( (unsigned) Primitives::GPF_IDENTITY ) + ": PUSH(1,ARG(0)) break;" : " ");
+            " case " + util::ToString( (unsigned) Primitives::GPF_IDENTITY ) + ": PUSH_1(ARG(0)) break;" : " ");
 
    for( unsigned i = 0; i < m_primitives.m_primitives.size(); ++i )
       if( INDEX( m_primitives.m_primitives[i] ) != Primitives::GPT_VAR ) 
@@ -627,9 +627,10 @@ void GP::BuildKernel()
             primitives (they are allowed to do that). */
          if( ! already_added[INDEX( m_primitives.m_primitives[i] )] )
          {
-            interpreter += " case " + util::ToString( INDEX( m_primitives.m_primitives[i] ) ) + ":"
-               + "PUSH(" + util::ToString( m_primitives.DB[INDEX( m_primitives.m_primitives[i] )].arity ) 
-               + "," + 
+            unsigned arity = m_primitives.DB[INDEX( m_primitives.m_primitives[i] )].arity; 
+
+            interpreter += " case " + util::ToString( INDEX( m_primitives.m_primitives[i] ) )
+               + ": PUSH" + ( arity <= 3 ? "_" : "(" ) + util::ToString( arity ) + (arity <= 3 ? "(" : ",") + 
 #ifdef FAST_PRIMITIVES
             ( m_primitives.DB[INDEX( m_primitives.m_primitives[i] )].fastcode.empty() ?
               m_primitives.DB[INDEX( m_primitives.m_primitives[i] )].code :
@@ -674,7 +675,11 @@ void GP::BuildKernel()
       "#define TOP       ( stack[stack_top] )\n"
       "#define POP       ( stack[stack_top--] )\n"
  //     "#define PUSH( i ) ( stack[++stack_top] = (i) )\n"
-      "#define PUSH(arity, exp) stack[stack_top + 1 - arity] = (exp); stack_top = stack_top + 1 - arity;\n"
+      "#define PUSH(arity, exp) stack[stack_top + 1 - arity] = (exp); stack_top += 1 - arity;\n"
+      "#define PUSH_0( value ) stack[++stack_top] = (value);\n"
+      "#define PUSH_1( exp ) stack[stack_top] = (exp);\n"
+      "#define PUSH_2( exp ) stack[stack_top - 1] = (exp); --stack_top;\n"
+      "#define PUSH_3( exp ) stack[stack_top - 2] = (exp); stack_top -= 2;\n"
       "#define ARG(n) (stack[stack_top - n])\n"
       "#define STACK_SIZE " + util::ToString( max_stack_size ) + "\n" +
       "#define CREATE_STACK float stack[STACK_SIZE]; int stack_top = -1;\n"

@@ -44,7 +44,7 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
             {
                INTERPRETER_CORE
                default:
-                  PUSH( 0, X[NUM_POINTS * AS_INT( program[op] ) + gl_id] );
+                  PUSH_0( X[NUM_POINTS * AS_INT( program[op] ) + gl_id] );
             }
 
          // -------------------------------

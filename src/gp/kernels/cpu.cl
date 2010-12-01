@@ -1,4 +1,4 @@
-#pragma OPENCL EXTENSION cl_amd_printf : enable
+//#pragma OPENCL EXTENSION cl_amd_printf : enable
 
 __kernel void evaluate( __global const uint* pop, __global const float* X, __global const float* Y,
                         __global float* E )
@@ -26,7 +26,7 @@ __kernel void evaluate( __global const uint* pop, __global const float* X, __glo
          {
             INTERPRETER_CORE
             default:
-               PUSH( 0, X[iter * X_DIM + AS_INT( program[op] )] );
+               PUSH_0( X[iter * X_DIM + AS_INT( program[op] )] );
          }
       }
       error += ERROR_METRIC( POP, Y[ iter ] );
