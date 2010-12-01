@@ -58,18 +58,6 @@ GP::GP( Params& p, cl_device_type device_type ): m_device_type( device_type ),
    // Random seed
    Random::Seed( (p.m_seed == 0 ? time( NULL ) : p.m_seed) );
 
-   // Selection pressure [default = 2]
-   if( m_params->m_selection_pressure <= 2 ) 
-   {
-      m_tournament_size = 2;
-   }
-   else // maximum = pop size
-   {
-      m_tournament_size = m_params->m_selection_pressure > m_params->m_population_size ?
-         m_params->m_population_size : 
-         m_params->m_selection_pressure;
-   }
-
    // Create room for the best individual so far
    m_best_program = new cl_uint[MaximumProgramSize()];
    // Set its size as zero
@@ -512,7 +500,7 @@ bool GP::EvaluatePopulation( cl_uint* pop )
 unsigned GP::Tournament( const cl_uint* pop ) const
 {
    unsigned winner = Random::Int( 0, m_params->m_population_size - 1 );
-   for( unsigned t = 0; t < m_tournament_size; ++t ) 
+   for( unsigned t = 1; t < m_params->m_tournament_size; ++t ) 
    {
       unsigned competitor = Random::Int( 0, m_params->m_population_size - 1 );
       if( m_E[competitor] < m_E[winner]

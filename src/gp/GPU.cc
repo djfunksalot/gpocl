@@ -93,7 +93,7 @@ void PPCU::CalculateNDRanges()
                       + util::ToString( util::NextPowerOf2( m_local_size ) );
 
    if( MaximumTreeSize() > m_local_size )
-      m_compile_flags += "-D PROGRAM_TREE_DOES_NOT_FIT_IN_LOCAL_SIZE";
+      m_compile_flags += " -D PROGRAM_TREE_DOES_NOT_FIT_IN_LOCAL_SIZE";
 
    if( ! util::IsPowerOf2( m_local_size ) )
       m_compile_flags += " -D LOCAL_SIZE_IS_NOT_POWER_OF_2";
@@ -143,7 +143,7 @@ void FPI::CalculateNDRanges()
                       + util::ToString( util::NextPowerOf2( m_local_size ) );
 
    if( MaximumTreeSize() > m_local_size )
-      m_compile_flags += "-D PROGRAM_TREE_DOES_NOT_FIT_IN_LOCAL_SIZE";
+      m_compile_flags += " -D PROGRAM_TREE_DOES_NOT_FIT_IN_LOCAL_SIZE";
 
    if( ! util::IsPowerOf2( m_local_size ) )
       m_compile_flags += " -D LOCAL_SIZE_IS_NOT_POWER_OF_2";

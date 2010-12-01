@@ -88,7 +88,7 @@ public:
    int m_population_size; /**< Population size */
    int m_number_of_generations; /**< Number of generations */
    long m_seed; /**< GP seed */
-   int m_selection_pressure; /**< Selection pressure */
+   int m_tournament_size; /**< Selection pressure */
    int m_elitism_size; /**< Elitism size */
    int m_maximum_tree_size; /**< The maximum allowed size for a program. */
    int m_max_local_size; /**< The maximum allowed work group size. */

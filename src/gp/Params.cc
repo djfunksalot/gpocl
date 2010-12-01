@@ -67,7 +67,7 @@ Params::ShowUsage( const char* app = "gpocl" ) const // -h or --help
    << "\n"
    << "Genetic Programming options:\n"
    << "  -p <p1,...,pn>, --primitives <p1,...,pn>\n"
-   << "     GP primitives (operators/operands) [default = +,-,*,/]\n"
+   << "     GP primitives (operators/operands) [default = +,-,*,/,neg,ephemeral]\n"
    << "  -pp, --print-primitives\n"
    << "     Print all available GP primitives\n"
    << "  -g <n>, --generations <n>\n"
@@ -75,13 +75,13 @@ Params::ShowUsage( const char* app = "gpocl" ) const // -h or --help
    << "  -s <n>, --seed <n>\n"
    << "     GP initialization seed, n>=0 [default = 0, random]\n"
    << "  -ps <n>, --population-size <n>\n"
-   << "     number of individuals [default = 256]\n"
+   << "     number of individuals [default = 512]\n"
    << "  -cp <f>, --crossover-probability <f>\n"
    << "     crossover probability, 0.0<=f<=1.0 [default = 0.95]\n"
    << "  -mp <f>, --mutation-probability <f>\n"
-   << "     mutation probability, 0.0<=f<=1.0 [default = 0.05]\n"
+   << "     mutation probability, 0.0<=f<=1.0 [default = 0.10]\n"
    << "  -sp <n>, --seletion-pressure <n>\n"
-   << "     selection pressure (tournament size), 2<=n<pop_size [default = 2]\n"
+   << "     selection pressure (tournament size), n>=1 [default = 3]\n"
    << "  -es <n>, --elitism-size <n>\n"
    << "     elitism size [default = 1]\n"
    << "  -ms <n>, --maximum-size <n>\n"
@@ -90,7 +90,7 @@ Params::ShowUsage( const char* app = "gpocl" ) const // -h or --help
    << "     tolerance of error (stop criterion) [default = none]\n"
    << "\n"
    << "OpenCL options:\n"
-   << "  -ocl-mls <n>, --ocl-maximum-local-size <n>\n";
+   << "  -cl-mls <n>, --cl-maximum-local-size <n>\n";
 }
 
 //----------------------------------------------------------------------
@@ -98,8 +98,7 @@ bool
 Params::Initialize()
 {
    // The 'Opts' object holds and processes user's input arguments
-   CmdLine::Parser Opts( m_argc, m_argv,
-         CmdLine::SILENT | CmdLine::OUT_OF_RANGE | CmdLine::NO_VALUE );
+   CmdLine::Parser Opts( m_argc, m_argv, CmdLine::OUT_OF_RANGE | CmdLine::NO_VALUE );
 
    // Let's declare all possible command-line options
 
@@ -111,7 +110,7 @@ Params::Initialize()
    Opts.String.Add( "-o", "--output-file", "gpocl.out" );
 
    // Function/terminal sets option
-   Opts.String.Add( "-p", "--primitives", "+,-,*,/" );
+   Opts.String.Add( "-p", "--primitives", "+,-,*,/,neg,ephemeral" );
    Opts.Bool.Add( "-pp", "--print-primitives" );
 
    Opts.Bool.Add( "-cpu", "--cpu" );
@@ -124,16 +123,16 @@ Params::Initialize()
    // Seed options
    Opts.Int.Add( "-s", "--seed", 0, 0, numeric_limits<long>::max() );
 
-   Opts.Int.Add( "-ps", "--population-size", 256, 5, numeric_limits<int>::max() );
+   Opts.Int.Add( "-ps", "--population-size", 512, 5, numeric_limits<int>::max() );
    Opts.Float.Add( "-cp", "--crossover-probability", 0.95, 0.0, 1.0 );
-   Opts.Float.Add( "-mp", "--mutation-probability", 0.05, 0.0, 1.0 );
-   Opts.Int.Add( "-sp", "--seletion-pressure", 2, 2, numeric_limits<int>::max() );
+   Opts.Float.Add( "-mp", "--mutation-probability", 0.10, 0.0, 1.0 );
+   Opts.Int.Add( "-sp", "--seletion-pressure", 3, 1, numeric_limits<int>::max() );
    Opts.Int.Add( "-es", "--elitism-size", 1, 0, numeric_limits<int>::max() );
    Opts.Int.Add( "-ms", "--maximum-size", 20, 1, numeric_limits<int>::max() );
 
    Opts.Float.Add( "-et", "--error-tolerance", -1.0, 0.0 );
 
-   Opts.Int.Add( "-ocl-mls", "--ocl-maximum-local-size", 0, 1 );
+   Opts.Int.Add( "-cl-mls", "--cl-maximum-local-size", 0, 1 );
    // -- Get the options! ----------------
    /* Right now, the 'Opts' object will process the command-line, i.e.,
     * it will try to recognize the options and their respective arguments. */
@@ -195,20 +194,18 @@ Params::Initialize()
    m_population_size = Opts.Int.Get( "-ps" );
    m_crossover_probability = Opts.Float.Get( "-cp" );
    m_mutation_probability = Opts.Float.Get( "-mp" );
-   m_selection_pressure = Opts.Int.Get( "-sp" );
    m_elitism_size = Opts.Int.Get( "-es" );
    m_maximum_tree_size = Opts.Int.Get( "-ms" );
 
    // -- Selection pressure (currently "tournament size")
-   m_selection_pressure = Opts.Int.Get( "-sp" );
-   if( m_selection_pressure >= m_population_size ) m_selection_pressure = 2;
+   m_tournament_size = Opts.Int.Get( "-sp" );
                                               
    m_error_tolerance = Opts.Float.Get( "-et" );
 
    m_output_file = Opts.String.Get( "-o" );
 
    // ---- OpenCL ------------------------------------------
-   m_max_local_size = Opts.Int.Get( "-ocl-mls" );
+   m_max_local_size = Opts.Int.Get( "-cl-mls" );
 
    // ---------------
    return true;
