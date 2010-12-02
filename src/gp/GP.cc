@@ -178,8 +178,8 @@ void GP::Breed( cl_uint* old_pop, cl_uint* new_pop )
       // Every genetic operator have a chance to go wrong
       if( Random::Probability( m_params->m_mutation_probability ) )
       {
-         if( Random::Probability( 0.5 ) )
-            NodeMutate( Program( new_pop, i ) );
+         if( Random::Probability( 2.0/3.0 ) )
+            NodeMutate( Program( new_pop, i ) ); // node mutate / neighbor mutate
          else
             SubTreeMutate( Program( new_pop, i ) );
       }
@@ -306,6 +306,83 @@ void GP::SubTreeMutate( cl_uint* program ) const
 }
 
 // -----------------------------------------------------------------------------
+/**
+  This function mutates a terminal's value to one in its neighborhood. It can
+  handle GPT_EPHEMERAL, GPT_CLASS, and GPT_VAR terminals.
+ */
+void GP::NeighborTerminalMutate( cl_uint& terminal ) const
+{
+   const cl_float precision = SCALE_FACTOR / (cl_float) COMPACT_RANGE;
+
+   switch( INDEX( terminal ) )
+   {
+      case Primitives::GPT_EPHEMERAL:
+         if( Random::Probability( 0.5 ) ) // same probability for increment/decrement
+         {
+            if( AS_FLOAT( terminal ) < COMPACT_RANGE - precision )
+               // increment a little bit
+               Primitives::RepackNodeValue( terminal, AS_FLOAT( terminal ) + precision );
+            else if( AS_FLOAT( terminal ) > precision )
+               // decrement a little bit
+               Primitives::RepackNodeValue( terminal, AS_FLOAT( terminal ) - precision );
+         }
+         else // the opposite
+         {
+            if( AS_FLOAT( terminal ) > precision )
+               // decrement a little bit
+               Primitives::RepackNodeValue( terminal, AS_FLOAT( terminal ) - precision );
+            else if( AS_FLOAT( terminal ) < COMPACT_RANGE - precision )
+               // increment a little bit
+               Primitives::RepackNodeValue( terminal, AS_FLOAT( terminal ) + precision );
+         }
+         break;
+
+      case Primitives::GPT_CLASS:
+         if( Random::Probability( 0.5 ) ) // same probability for increment/decrement
+         {
+            if( AS_INT( terminal ) < m_primitives.m_max_Y )
+               // increment a little bit
+               Primitives::RepackNodeValue( terminal, AS_INT( terminal ) + 1 );
+            else if( AS_INT( terminal ) > m_primitives.m_min_Y ) // handle one-class problem
+               // decrement a little bit
+               Primitives::RepackNodeValue( terminal, AS_INT( terminal ) - 1 );
+         }
+         else // the opposite
+         {
+            if( AS_INT( terminal ) > m_primitives.m_min_Y )
+               // decrement a little bit
+               Primitives::RepackNodeValue( terminal, AS_INT( terminal ) - 1 );
+            else if( AS_INT( terminal ) < m_primitives.m_max_Y ) // handle one-class problem
+               // increment a little bit
+               Primitives::RepackNodeValue( terminal, AS_INT( terminal ) + 1 );
+         }
+         break;
+      case Primitives::GPT_VAR:
+         if( Random::Probability( 0.5 ) ) // same probability for increment/decrement
+         {
+            if( AS_INT( terminal ) < m_x_dim - 1 )
+               // increment a little bit
+               Primitives::RepackNodeValue( terminal, AS_INT( terminal ) + 1 );
+            else if( AS_INT( terminal ) > 0 ) // handle one-dimensional problem
+               // decrement a little bit
+               Primitives::RepackNodeValue( terminal, AS_INT( terminal ) - 1 );
+         }
+         else // the opposite
+         {
+            if( AS_INT( terminal ) > 0 )
+               // decrement a little bit
+               Primitives::RepackNodeValue( terminal, AS_INT( terminal ) - 1 );
+            else if( AS_INT( terminal ) < m_x_dim - 1 ) // handle one-dimensional problem
+               // increment a little bit
+               Primitives::RepackNodeValue( terminal, AS_INT( terminal ) + 1 );
+         }
+         break;
+      default: // an unrecognized terminal (possibly a constant, lets pick another
+               // terminal).
+         terminal = m_primitives.RandomNode( 0, 0 );
+   }
+}
+// -----------------------------------------------------------------------------
 void GP::NodeMutate( cl_uint* program ) const
 {
    // Copy the size (CopyNodeMutate, differently from CopySubTreeMutate doesn't
@@ -317,15 +394,13 @@ void GP::NodeMutate( cl_uint* program ) const
    // is the last node.
    unsigned mutation_point = Random::Int( 1, ProgramSize( program ) ); // [1, size] (inclusive)
 
-   //                      (mutation point)
-   //                             v
-   // [ ]     [ ]     [ ]        [*]         [ ]     [ ]     [ ]
-   // |      first      |   | mutated pt |   | second          |
-
    // Mutate the node by a random node of the same arity (remember, this is *node*
    // mutation!).
-   program[mutation_point] = m_primitives.RandomNode( ARITY( program[mutation_point] ),
-                                                      ARITY( program[mutation_point] ) );
+   if( ARITY( program[mutation_point] ) == 0 && Random::Probability( 0.5 ) )
+      NeighborTerminalMutate( program[mutation_point] );
+   else
+      program[mutation_point] = m_primitives.RandomNode( ARITY( program[mutation_point] ),
+                                                         ARITY( program[mutation_point] ) );
 }
 
 // -----------------------------------------------------------------------------

@@ -111,9 +111,22 @@ private:
 
    std::vector<std::pair<unsigned, unsigned> > m_primitives_boundaries;
 
-private:
+public:
+   static void RepackNodeValue( cl_uint& node, cl_float new_value ) 
+   {
+      // Clear previous value and set the new one
+      node = (node & 0xFFC00000) | EncodeFloat( new_value ); // 0xFFC00000 = 11111111 11000000 00000000 00000000
+   }
+
+   static void RepackNodeValue( cl_uint& node, cl_uint new_value ) 
+   {
+      // Clear previous value and set the new one
+      node = (node & 0xFFC00000) | new_value; // 0xFFC00000 = 11111111 11000000 00000000 00000000
+   }
+
    // --------------
-   cl_uint PackNode( cl_uint arity, cl_uint index ) const {
+   static cl_uint PackNode( cl_uint arity, cl_uint index ) 
+   {
       assert( sizeof(cl_uint) == 4 );
 
       // checking bounds
@@ -122,18 +135,28 @@ private:
 
       return (arity << 29) | (index << 22);
    }
-   cl_uint PackNode( cl_uint arity, cl_uint index, cl_uint value ) const {
+
+   static cl_uint PackNode( cl_uint arity, cl_uint index, cl_uint value ) 
+   {
       // checking bounds
       assert( ! (value & 0xFFC00000) ); // 0xFFC00000 = 11111111 11000000 00000000 00000000
 
       return PackNode( arity, index ) | value;
    }
-   cl_uint PackNode( cl_uint arity, cl_uint index, cl_float value ) const {
-      unsigned packed_value = util::RndPosNum<unsigned>( value * COMPACT_RANGE / SCALE_FACTOR );
-      // Checking bounds, i.e. can packed_value fit in 22 bits?)
-      assert( ! (packed_value & 0xFFC00000) ); // 0xFFC00000 = 11111111 11000000 00000000 00000000
 
-      return PackNode( arity, index ) | packed_value;
+   static cl_uint PackNode( cl_uint arity, cl_uint index, cl_float value ) 
+   {
+      return PackNode( arity, index ) | EncodeFloat( value );
+   }
+
+   static cl_uint EncodeFloat( cl_float value )
+   {
+      cl_uint encoded = util::RndPosNum<cl_float>( value * COMPACT_RANGE / (cl_float) SCALE_FACTOR );
+      
+      // Checking bounds, i.e. can packed_value fit in 22 bits?)
+      assert( ! (encoded & 0xFFC00000) ); // 0xFFC00000 = 11111111 11000000 00000000 00000000
+
+      return encoded;
    }
    // --------------
 };

@@ -219,6 +219,7 @@ protected:
      Like CopyNodeMutate but it does the mutation in loco.
     */
    void NodeMutate( cl_uint* program ) const;
+   void NeighborTerminalMutate( cl_uint& terminal ) const;
 
    /**
      Create a linear tree of the exactly given size, starting at 'node'.
