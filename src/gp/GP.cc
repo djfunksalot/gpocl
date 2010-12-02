@@ -114,10 +114,11 @@ void GP::Evolve()
    // 3:
    for( unsigned gen = 2; gen <= m_params->m_number_of_generations; ++gen )
    {
-      std::cout << "\n[Gen " << gen << " of " << m_params->m_number_of_generations << "]... ";
+      std::cout << "[Gen " << gen << " of " << m_params->m_number_of_generations << std::setprecision(10) << "] (Error: " << m_best_error << ")... ";
 #ifdef PROFILING
-      std::cout << std::setprecision(2) << std::fixed << "[GPop/s: " << m_node_evaluations / (m_kernel_time/1.0E9) << std::setprecision(4) << " | Node evals: " << m_node_evaluations << " | Avg. KET: " << m_kernel_time / (m_kernel_calls * 1.0E6) << "ms | Avg. KLT: " << m_launch_time / (m_kernel_calls * 1.0E6) << "ms | Acc. KET: " << m_kernel_time/1.0E+9 << "s | Acc. KLT: " << m_launch_time/1.0E+9 << "s | Kernel calls: " << m_kernel_calls << "]\n";
+      std::cout << std::setprecision(2) << std::fixed << "[GPop/s: " << m_node_evaluations / (m_kernel_time/1.0E9) << std::setprecision(4) << " | Node evals: " << m_node_evaluations << " | Avg. KET: " << m_kernel_time / (m_kernel_calls * 1.0E6) << "ms | Avg. KLT: " << m_launch_time / (m_kernel_calls * 1.0E6) << "ms | Acc. KET: " << m_kernel_time/1.0E+9 << "s | Acc. KLT: " << m_launch_time/1.0E+9 << "s | Kernel calls: " << m_kernel_calls << "]";
 #endif
+      std::cout << std::endl;
       // 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16:
       ///Breed( cur_pop, tmp_pop, errors );
       Breed( cur_pop, tmp_pop );
@@ -479,10 +480,10 @@ bool GP::EvaluatePopulation( cl_uint* pop )
          m_best_error = m_E[i];
          Clone( Program( pop, i ), m_best_program );
 
-         std::cout << "Evolved: [" << std::setprecision(12) << m_best_error << "]\t{" 
+         std::cout << "\nEvolved: [" << std::setprecision(12) << m_best_error << "]\t{" 
                    << ProgramSize( m_best_program ) << "}\t";
          PrintProgramPretty( m_best_program );
-         std::cout << std::endl;
+         std::cout << "\n--------------------------------------------------------------------------------\n";
       }
       // TODO: Pick the best and fill the elitism vector (if any)
    }

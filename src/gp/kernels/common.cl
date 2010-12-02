@@ -13,6 +13,7 @@
 
 // The error metric
 #define ERROR_METRIC( actual, expected ) pown( actual - expected, 2 )
+//#define ERROR_METRIC( actual, expected ) fabs( actual - expected )
 
 #define MAX_INT_VALUE 4194303 // 2^22 - 1
 #define COMPACT_RANGE MAX_INT_VALUE // 2^22 - 1
