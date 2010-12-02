@@ -14,7 +14,8 @@
 // The error metric
 #define ERROR_METRIC( actual, expected ) pown( actual - expected, 2 )
 
-#define COMPACT_RANGE 4194303 // 2^22 - 1
+#define MAX_INT_VALUE 4194303 // 2^22 - 1
+#define COMPACT_RANGE MAX_INT_VALUE // 2^22 - 1
 #define SCALE_FACTOR 16 // Range of possible float values: [0.0, SCALE_FACTOR]
 
 #define ARITY( packed ) ((packed & 0xE0000000) >> 29) // 0xE0000000 = 11100000 00000000 00000000 00000000

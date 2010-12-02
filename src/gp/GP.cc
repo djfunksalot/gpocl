@@ -924,7 +924,7 @@ void GP::LoadPoints( std::vector<std::vector<cl_float> > & out_x )
       
       // Update m_min_Y/m_max_Y (only useful for data classification)
       if( m_Y.back() < m_primitives.m_min_Y && m_Y.back() > 0 ) m_primitives.m_min_Y = m_Y.back();
-      if( m_Y.back() > m_primitives.m_max_Y ) m_primitives.m_max_Y = m_Y.back();
+      if( m_Y.back() > m_primitives.m_max_Y && m_Y.back() <= MAX_INT_VALUE ) m_primitives.m_max_Y = m_Y.back();
 
       out_x.push_back( v );
    }

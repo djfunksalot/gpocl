@@ -17,7 +17,7 @@ __kernel void evaluate( __global const uint* pop, __global const float* X,
    uint gr_id = get_group_id( 0 );
    uint lo_id = get_local_id( 0 );
 
-   float error;
+   //float error;
 
    for( unsigned p = 0; p < POP_SIZE; ++p )
    {

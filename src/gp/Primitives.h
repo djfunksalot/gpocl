@@ -113,28 +113,27 @@ private:
 
 private:
    // --------------
-   cl_uint PackNode( cl_uint arity, cl_uint type ) const {
+   cl_uint PackNode( cl_uint arity, cl_uint index ) const {
       assert( sizeof(cl_uint) == 4 );
 
       // checking bounds
       assert( ! (arity & 0xFFFFFFF8) ); // 0xFFFFFFF8 = 11111111 11111111 11111111 11111000
-      assert( ! (type  & 0xFFFFFF80) ); // 0xFFFFFF80 = 11111111 11111111 11111111 10000000
+      assert( ! (index  & 0xFFFFFF80) ); // 0xFFFFFF80 = 11111111 11111111 11111111 10000000
 
-      return (arity << 29) | (type << 22);
-      //  return PACKALELO( arity, type );
+      return (arity << 29) | (index << 22);
    }
-   cl_uint PackNode( cl_uint arity, cl_uint type, cl_uint index ) const {
+   cl_uint PackNode( cl_uint arity, cl_uint index, cl_uint value ) const {
       // checking bounds
-      assert( ! (index & 0xFFC00000) ); // 0xFFC00000 = 11111111 11000000 00000000 00000000
+      assert( ! (value & 0xFFC00000) ); // 0xFFC00000 = 11111111 11000000 00000000 00000000
 
-      return PackNode( arity, type ) | index;
+      return PackNode( arity, index ) | value;
    }
-   cl_uint PackNode( cl_uint arity, cl_uint type, cl_float value ) const {
+   cl_uint PackNode( cl_uint arity, cl_uint index, cl_float value ) const {
       unsigned packed_value = util::RndPosNum<unsigned>( value * COMPACT_RANGE / SCALE_FACTOR );
       // Checking bounds, i.e. can packed_value fit in 22 bits?)
       assert( ! (packed_value & 0xFFC00000) ); // 0xFFC00000 = 11111111 11000000 00000000 00000000
 
-      return PackNode( arity, type ) | packed_value;
+      return PackNode( arity, index ) | packed_value;
    }
    // --------------
 };
