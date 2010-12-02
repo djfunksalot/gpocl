@@ -61,7 +61,7 @@ Primitives::Primitives(): m_need_identity( false ),
    Register( 2, "div",          "/",            "(ARG(1) == 0.0f ? 1.0f : ARG(0)/ARG(1))", "(ARG(1) == 0.0f ? 1.0f : native_divide( ARG(0), ARG(1) ) )"  );
 #endif
    Register( 2, "equal",        "=",            "ARG(0) == ARG(1)" );
-   Register( 2, "fmod",         "%",            "fmod(ARG(0), ARG(1))" );
+   Register( 2, "mod",          "%",            "fmod(ARG(0), ARG(1))" );
    Register( 2, "greater",      ">",            "ARG(0) > ARG(1)" );
    Register( 2, "greaterequal", ">=",           "ARG(0) >= ARG(1)" );
    Register( 2, "less",         "<",            "ARG(0) < ARG(1)" );
@@ -71,19 +71,20 @@ Primitives::Primitives(): m_need_identity( false ),
    Register( 2, "min",          "min",          "min(ARG(0), ARG(1))" );
    Register( 2, "minus",        "-",            "ARG(0) - ARG(1)" );
    Register( 2, "mul",          "*",            "ARG(0) * ARG(1)" );
+   Register( 2, "notequal",     "!=",           "ARG(0) != ARG(1)" );
    Register( 2, "or",           "||",           "ARG(0) || ARG(1)" );
    Register( 2, "pow",          "^",            "pow(ARG(0), ARG(1))" );
 
-   Register( 1, "^2",           "^2",           "ARG(0) * ARG(0)" );
-   Register( 1, "^3",           "^3",           "ARG(0) * ARG(0) * ARG(0)" );
-   Register( 1, "^4",           "^4",           "ARG(0) * ARG(0) * ARG(0) * ARG(0)" );
+   Register( 1, "abs",          "abs",          "fabs(ARG(0))" );
    Register( 1, "ceil",         "ceil",         "ceil(ARG(0))" );
    Register( 1, "cos",          "cos",          "cos(ARG(0))", "native_cos(ARG(0))" );
    Register( 1, "exp",          "exp",          "exp(ARG(0))", "native_exp(ARG(0))" );
-   Register( 1, "exp2",         "exp2",         "exp2(ARG(0))", "native_exp2(ARG(0))" );
    Register( 1, "exp10",        "exp10",        "exp10(ARG(0))", "native_exp10(ARG(0))" );
-   Register( 1, "fabs",         "fabs",         "fabs(ARG(0))" );
+   Register( 1, "exp2",         "exp2",         "exp2(ARG(0))", "native_exp2(ARG(0))" );
    Register( 1, "floor",        "floor",        "floor(ARG(0))" );
+   Register( 1, "pow2",         "^2",           "ARG(0) * ARG(0)" );
+   Register( 1, "pow3",         "^3",           "ARG(0) * ARG(0) * ARG(0)" );
+   Register( 1, "pow4",         "^4",           "ARG(0) * ARG(0) * ARG(0) * ARG(0)" );
 #ifdef UNPROTECTED_FUNCTIONS
    Register( 1, "log",          "log",          "log(ARG(0))",   "native_log(ARG(0))"  );
    Register( 1, "log10",        "log10",        "log10(ARG(0))", "native_log10(ARG(0))" );
@@ -99,7 +100,7 @@ Primitives::Primitives(): m_need_identity( false ),
    Register( 1, "sin",          "sin",          "sin(ARG(0))", "native_sin(ARG(0))" );
 #ifdef UNPROTECTED_FUNCTIONS
    Register( 1, "sqrt",         "sqrt",         "sqrt(ARG(0))", "native_sqrt(ARG(0))"  );
-   Register( 1, "tan",          "tan",          "tan(ARG(0))", "native_tan(ARG(0))" ); // TODO: add check for invalid values or let return NaN and so "kill" the program?
+   Register( 1, "tan",          "tan",          "tan(ARG(0))", "native_tan(ARG(0))" );
 #else
    Register( 1, "sqrt",         "sqrt",         "(ARG(0) < 0.0f ? 1.0f : sqrt(ARG(0)))", "(ARG(0) < 0.0f ? 1.0f : native_sqrt(ARG(0)))"  );
 #endif
