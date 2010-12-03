@@ -69,11 +69,12 @@ Primitives::Primitives(): m_need_identity( false ),
    Register( 2, "max",          "max",          "max(ARG(0), ARG(1))" );
    Register( 2, "mean",         "mean",         "(ARG(0) + ARG(1))/2.0f" );
    Register( 2, "min",          "min",          "min(ARG(0), ARG(1))" );
-   Register( 2, "minus",        "-",            "ARG(0) - ARG(1)" );
+   Register( 2, "sub",          "-",            "ARG(0) - ARG(1)" );
    Register( 2, "mul",          "*",            "ARG(0) * ARG(1)" );
    Register( 2, "notequal",     "!=",           "ARG(0) != ARG(1)" );
    Register( 2, "or",           "||",           "ARG(0) || ARG(1)" );
    Register( 2, "pow",          "^",            "pow(ARG(0), ARG(1))" );
+   Register( 2, "xor",          "xor",          "((ARG(0) <= 0.0f && ARG(1) > 0.0f) || (ARG(0) > 0.0f && ARG(1) <= 0.0f))" );
 
    Register( 1, "abs",          "abs",          "fabs(ARG(0))" );
    Register( 1, "ceil",         "ceil",         "ceil(ARG(0))" );
@@ -104,6 +105,14 @@ Primitives::Primitives(): m_need_identity( false ),
 #else
    Register( 1, "sqrt",         "sqrt",         "(ARG(0) < 0.0f ? 1.0f : sqrt(ARG(0)))", "(ARG(0) < 0.0f ? 1.0f : native_sqrt(ARG(0)))"  );
 #endif
+   Register( 1, "step",         "step",         "(ARG(0) >= 0.0f)" );
+   Register( 1, "sign",         "sign",         "(ARG(0) > 0.0f ? 1.0f : (ARG(0) < 0.0f ? -1.0f : 0.0f))" );
+   Register( 1, "logistic",     "logistic",     "(1.0f/(1.0f + exp(-ARG(0))))", "(1.0f/(1.0f + native_exp(-ARG(0))))" );
+   Register( 1, "hill2",        "hill2",        "(ARG(0)*ARG(0)/(1.0f + ARG(0)*ARG(0)))" );
+   // Fast factorial
+   Register( 1, "gamma",        "gamma",        "pow((ARG(0)/2.71828174591064f)*sqrt(ARG(0)*sinh(1/ARG(0))),ARG(0))*sqrt(2*3.14159274101257f/ARG(0))" );
+   Register( 1, "gauss",        "gauss",        "exp(-ARG(0)*ARG(0))", "native_exp(-ARG(0)*ARG(0))" );
+
    Register( 0, "c_-1",         "-1",           "-1.0f" );
    Register( 0, "c_-2",         "-2",           "-2.0f" );
    Register( 0, "c_-3",         "-3",           "-3.0f" );
