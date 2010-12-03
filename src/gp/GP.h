@@ -37,12 +37,6 @@
 /* Use native functions (hardware implemented) whenever available. */
 #define FAST_PRIMITIVES 1
 
-/*
-   When MAPPING is defined the output values (predictions) from the kernel
-   executions are read via mapping, which is supposed faster than explicit
-   copies.
-*/
-//#define MAPPING 1
 ////////////////////////////////////////
 
 #define __CL_ENABLE_EXCEPTIONS
@@ -98,9 +92,7 @@ public:
    virtual ~GP() 
    { 
       if( m_X ) delete[] m_X;
-#ifndef MAPPING
       if( m_E ) delete[] m_E;
-#endif
       delete[] m_best_program;
    }
 

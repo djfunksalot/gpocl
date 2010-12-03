@@ -93,9 +93,7 @@ void GP::Evolve()
    20: return the best individual so far
    */
 
-#ifndef MAPPING
    m_E = new cl_float[ m_params->m_population_size ];
-#endif
 
    cl_uint* pop_a = new cl_uint[ m_params->m_population_size * MaximumProgramSize() ];
    cl_uint* pop_b = new cl_uint[ m_params->m_population_size * MaximumProgramSize() ];
@@ -506,15 +504,9 @@ bool GP::EvaluatePopulation( cl_uint* pop )
    m_launch_time += started - enqueued;
 #endif
 
-   // TODO: Do I need to always Map and Unmap?
-#ifdef MAPPING
-   m_E = (cl_float*) m_queue.enqueueMapBuffer( m_buf_E, CL_TRUE, 
-         CL_MAP_READ, 0, m_params->m_population_size * sizeof(cl_float) );
-#else
    m_queue.enqueueReadBuffer( m_buf_E, CL_TRUE, 0,
          m_params->m_population_size * sizeof(cl_float),
          m_E, NULL, NULL );
-#endif
 
    // --- Fitness calculation -----------------
 
@@ -534,9 +526,6 @@ bool GP::EvaluatePopulation( cl_uint* pop )
       }
       // TODO: Pick the best and fill the elitism vector (if any)
    }
-#ifdef MAPPING
-   m_queue.enqueueUnmapMemObject( m_buf_E, m_E );
-#endif
 
    // We should stop the evolution if an error below the specified tolerance is found
    return (m_best_error <= m_params->m_error_tolerance);
@@ -628,12 +617,7 @@ void GP::CreateBuffers()
 #ifndef NDEBUG
    std::cout << "Trying to allocate " << sizeof( cl_float ) * m_local_size * m_params->m_population_size << " bytes for the prediction errors\n";
 #endif
-   m_buf_E = cl::Buffer( m_context,
-#ifdef MAPPING
-                         CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
-#else
-                         CL_MEM_WRITE_ONLY,
-#endif
+   m_buf_E = cl::Buffer( m_context, CL_MEM_WRITE_ONLY,
                          m_local_size * m_params->m_population_size * sizeof(cl_float) );
 
   /* 
