@@ -61,7 +61,7 @@ GP::GP( Params& p, cl_device_type device_type ): m_device_type( device_type ),
    // Create room for the best individual so far
    m_best_program = new cl_uint[MaximumProgramSize()];
    // Set its size as zero
-   m_best_program[0] = 0;
+   SetProgramSize( m_best_program, 0 );
 }
 
 // -----------------------------------------------------------------------------
@@ -178,7 +178,7 @@ void GP::Breed( cl_uint* old_pop, cl_uint* new_pop )
       // Every genetic operator have a chance to go wrong
       if( Random::Probability( m_params->m_mutation_probability ) )
       {
-         if( Random::Probability( 2.0/3.0 ) )
+         if( Random::Probability( 2.0/3.0 ) ) // 66%
             NodeMutate( Program( new_pop, i ) ); // node mutate / neighbor mutate
          else
             SubTreeMutate( Program( new_pop, i ) );
@@ -189,13 +189,6 @@ void GP::Breed( cl_uint* old_pop, cl_uint* new_pop )
       // used to calculate how many GPop/s we could achieve).
       m_node_evaluations += ProgramSize( new_pop, i ) * m_num_points;
 #endif
-/*#ifndef NDEBUG
-      std::cout << std::endl;
-      PrintProgram( Program( old_pop, i ) );
-      std::cout << std::endl;
-      PrintProgram( Program( new_pop, i ) );
-      std::cout << std::endl;
-#endif*/
    }
 }
 
@@ -209,7 +202,6 @@ void GP::Crossover( const cl_uint* mom, const cl_uint* dad, cl_uint* child ) con
    unsigned mom_subtree_size;
    unsigned dad_subtree_size;
    unsigned child_program_size;
-   register unsigned i,j;
 
    // Choose cut points (mom/dad) that don't go beyond the maximum tree size
    do
@@ -224,13 +216,8 @@ void GP::Crossover( const cl_uint* mom, const cl_uint* dad, cl_uint* child ) con
 
    SetProgramSize( child, child_program_size );
 
-   /*
-   std::cout << "\n\npt_mom: " << pt_mom << " pt_dad: " << pt_dad;
-   std::cout << "\nMom: "; PrintProgram( mom );
-   std::cout << "\nDad: "; PrintProgram( dad );
-   */
-
    // Actual crossover
+   unsigned i, j;
    for( i = 1; i < pt_mom; i++ )
    {
       *(child + i) = *(mom + i);
@@ -247,7 +234,6 @@ void GP::Crossover( const cl_uint* mom, const cl_uint* dad, cl_uint* child ) con
 
       i++;
    }
-   //std::cout << "\nSon: "; PrintProgram( child );
 
    assert( TreeSize( child + 1 ) == ProgramSize( child ) );
 }
@@ -255,30 +241,17 @@ void GP::Crossover( const cl_uint* mom, const cl_uint* dad, cl_uint* child ) con
 // -----------------------------------------------------------------------------
 void GP::SubTreeMutate( cl_uint* program ) const
 {
-   // Copy the size (CopyNodeMutate, differently from CopySubTreeMutate doesn't
-   // change the actual size of the program)
    assert( program != NULL );
    assert( ProgramSize( program ) <= MaximumTreeSize() );
 
-   //unsigned size = ProgramSize( program );
    // Pos 0 is the program size; pos 1 is the first node and 'program size + 1'
    // is the last node.
    unsigned mutation_pt = Random::Int( 1, ProgramSize( program ) ); // [1, size] (inclusive)
 
-   //                   (mutation point)
-   //                          v
-   // [ ]     [ ]     [ ]     [*]     [*]     [*]     [ ]    [ ]
-   // |      first      |     | mutated subtree |     | second |
-
-   // Create a new random subtree of same size of the original one and put it
-   // in the corresponding place in program_dest
    unsigned subtree_size = TreeSize( program + mutation_pt );
    unsigned new_subtree_size = Random::Int( 1, 
             MaximumTreeSize() - ( ProgramSize( program ) - subtree_size ) );
   
-   //std::cout << "\n\npt: " << mutation_pt << " ss: " << subtree_size << " nss: " << new_subtree_size;
-   //std::cout << "\n1: "; PrintProgram( program );
-
    // Set the resulting tree size to the newly generated program
    SetProgramSize( program, ProgramSize( program ) + (new_subtree_size - subtree_size) );
 
@@ -301,8 +274,8 @@ void GP::SubTreeMutate( cl_uint* program ) const
       }
    }
 
+   // Actually create the random subtree starting at mutation_pt
    CreateLinearTree( program + mutation_pt, new_subtree_size );
-   //std::cout << "\n2: "; PrintProgram( program ); std::cout << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -382,28 +355,28 @@ void GP::NeighborTerminalMutate( cl_uint& terminal ) const
          terminal = m_primitives.RandomNode( 0, 0 );
    }
 }
+
 // -----------------------------------------------------------------------------
 void GP::NodeMutate( cl_uint* program ) const
 {
-   // Copy the size (CopyNodeMutate, differently from CopySubTreeMutate doesn't
-   // change the actual size of the program)
    assert( program != NULL );
    assert( ProgramSize( program ) <= MaximumTreeSize() );
 
    // Pos 0 is the program size; pos 1 is the first node and 'program size + 1'
    // is the last node.
-   unsigned mutation_point = Random::Int( 1, ProgramSize( program ) ); // [1, size] (inclusive)
+   unsigned mutation_pt = Random::Int( 1, ProgramSize( program ) ); // [1, size] (inclusive)
 
    // Mutate the node by a random node of the same arity (remember, this is *node*
    // mutation!).
-   if( ARITY( program[mutation_point] ) == 0 && Random::Probability( 0.5 ) )
-      NeighborTerminalMutate( program[mutation_point] );
+   if( ARITY( program[mutation_pt] ) == 0 && Random::Probability( 0.5 ) )
+      NeighborTerminalMutate( program[mutation_pt] );
    else
-      program[mutation_point] = m_primitives.RandomNode( ARITY( program[mutation_point] ),
-                                                         ARITY( program[mutation_point] ) );
+      program[mutation_pt] = m_primitives.RandomNode( ARITY( program[mutation_pt] ),
+                                                      ARITY( program[mutation_pt] ) );
 }
 
 // -----------------------------------------------------------------------------
+#if 0
 void GP::CopySubTreeMutate( const cl_uint* program_orig, cl_uint* program_dest ) const
 {
 #define CAN_CHANGE_ORIGINAL_SIZE 1
@@ -413,7 +386,7 @@ void GP::CopySubTreeMutate( const cl_uint* program_orig, cl_uint* program_dest )
 
    // Pos 0 is the program size; pos 1 is the first node and 'program size + 1'
    // is the last node.
-   unsigned mutation_point = Random::Int( 1, ProgramSize( program_orig ) ); // [1, size] (inclusive)
+   unsigned mutation_pt = Random::Int( 1, ProgramSize( program_orig ) ); // [1, size] (inclusive)
 
    //                   (mutation point)
    //                          v
@@ -421,12 +394,12 @@ void GP::CopySubTreeMutate( const cl_uint* program_orig, cl_uint* program_dest )
    // |      first      |     | mutated subtree |     | second |
 
    // Copy the first fragment but not the size (for now).
-   for( unsigned i = 1; i < mutation_point; ++i )
+   for( unsigned i = 1; i < mutation_pt; ++i )
       program_dest[i] = program_orig[i];
 
    // Create a new random subtree of same size of the original one and put it
    // in the corresponding place in program_dest
-   unsigned subtree_size = TreeSize( &program_orig[mutation_point] );
+   unsigned subtree_size = TreeSize( &program_orig[mutation_pt] );
 #ifdef CAN_CHANGE_ORIGINAL_SIZE
    unsigned new_subtree_size = Random::Int( 1, 
          MaximumTreeSize() - ( ProgramSize( program_orig ) - subtree_size ) );
@@ -434,10 +407,10 @@ void GP::CopySubTreeMutate( const cl_uint* program_orig, cl_uint* program_dest )
    unsigned new_subtree_size = subtree_size;
 #endif
 
-   CreateLinearTree( &program_dest[mutation_point], new_subtree_size );
+   CreateLinearTree( &program_dest[mutation_pt], new_subtree_size );
 
    // Continue to copy the second fragment
-   for( unsigned i = mutation_point + subtree_size; i < ProgramSize( program_orig ) + 1; ++i )
+   for( unsigned i = mutation_pt + subtree_size; i < ProgramSize( program_orig ) + 1; ++i )
       program_dest[i + (new_subtree_size - subtree_size)] = program_orig[i];
 
    // Finally, set the resulting tree size to the newly generated program
@@ -456,7 +429,7 @@ void GP::CopyNodeMutate( const cl_uint* program_orig, cl_uint* program_dest ) co
    unsigned size = *program_orig;
    // Pos 0 is the program size; pos 1 is the first node and 'program size + 1'
    // is the last node.
-   unsigned mutation_point = Random::Int( 1, size ); // [1, size] (inclusive)
+   unsigned mutation_pt = Random::Int( 1, size ); // [1, size] (inclusive)
 
    //                      (mutation point)
    //                             v
@@ -464,18 +437,19 @@ void GP::CopyNodeMutate( const cl_uint* program_orig, cl_uint* program_dest ) co
    // |      first      |   | mutated pt |   | second          |
 
    // Copy the size (pos 0) and then the first fragment (until just before the mutation point) 
-   for( unsigned i = 0; i < mutation_point; ++i )
+   for( unsigned i = 0; i < mutation_pt; ++i )
       program_dest[i] = program_orig[i];
 
    // Mutate the node by a random node of the same arity (remember, this is *node*
    // mutation!).
-   program_dest[mutation_point] = m_primitives.RandomNode( ARITY( program_orig[mutation_point] ),
-                                                          ARITY( program_orig[mutation_point] ) );
+   program_dest[mutation_pt] = m_primitives.RandomNode( ARITY( program_orig[mutation_pt] ),
+                                                          ARITY( program_orig[mutation_pt] ) );
 
    // Continue to copy the second fragment
-   for( unsigned i = mutation_point + 1; i < size + 1; ++i )
+   for( unsigned i = mutation_pt + 1; i < size + 1; ++i )
       program_dest[i] = program_orig[i];
 }
+#endif
 
 // -----------------------------------------------------------------------------
 void GP::Clone( cl_uint* program_orig, cl_uint* program_dest ) const
@@ -484,8 +458,7 @@ void GP::Clone( cl_uint* program_orig, cl_uint* program_dest ) const
    assert( *program_orig <= MaximumTreeSize() );
 
    // The size is the first element
-   for( unsigned i = *program_orig + 1; i-- ; )
-      *program_dest++ = *program_orig++;
+   for( unsigned i = *program_orig + 1; i-- ; ) *program_dest++ = *program_orig++;
 }
 
 // -----------------------------------------------------------------------------
@@ -677,10 +650,8 @@ void GP::CreateBuffers()
 #ifndef NDEBUG
    std::cout << "Trying to allocate " << sizeof( cl_uint ) * ( m_params->m_population_size * MaximumProgramSize() )  << " bytes for the population of programs\n";
 #endif
-   m_buf_pop = cl::Buffer( m_context,
-                           CL_MEM_READ_ONLY,
-                           sizeof( cl_uint ) * ( m_params->m_population_size * 
-                                               MaximumProgramSize() ) );
+   m_buf_pop = cl::Buffer( m_context, CL_MEM_READ_ONLY,
+         sizeof( cl_uint ) * ( m_params->m_population_size * MaximumProgramSize() ) );
 }
 
 // -----------------------------------------------------------------------------
@@ -806,7 +777,6 @@ void GP::InitializePopulation( cl_uint* pop )
 {
    for( unsigned i = 0; i < m_params->m_population_size; ++i )
    {
-      // TODO: how about using a normal distribution (with mean = max_gen_size/2)?
       cl_uint tree_size = Random::Int( 1, MaximumTreeSize() );
 
       cl_uint* program = Program( pop, i );
@@ -815,14 +785,6 @@ void GP::InitializePopulation( cl_uint* pop )
       SetProgramSize( program, tree_size );
 
       CreateLinearTree( ++program, tree_size );
-
-      /*
-   std::cout << "\n";
-   PrintProgramPretty( Program( pop, i ) );
-   std::cout << "\n";
-   PrintProgram( Program(pop,i) );
-   std::cout << " [size: " << ProgramSize( pop,i ) << "]\n";
-   */
 #ifdef PROFILING
       // Update the total number of nodes that are going to be evaluated (to be
       // used to calculate how many GPop/s we could achieve).
@@ -926,8 +888,9 @@ void GP::CreateLinearTree( cl_uint* node, unsigned size ) const
          *node = m_primitives.RandomNode( 1, size - open );
 
       /* Whenever we put a new operator/operand, the number of open arguments
-         decreases. However, if the new operator requires more than one argument
-         (arity >= 2) then we end up increasing the current number of open arguments.
+         decreases. However, if the new operator requires more than one
+         argument (arity >= 2) then we end up increasing the current number of
+         open arguments.
        */
       open += ARITY( *node++ ) - 1;
    } while( --size );
@@ -945,12 +908,6 @@ void GP::LoadPoints( std::vector<std::vector<cl_float> > & out_x )
       // Maybe a typo when passing the file name on the command-line
       throw Error( "[" + m_params->m_data_points[0] + "]: file not found." );
 	}
-
-   
-   
-  // m_Y = new cl_float[ 16 ];
-
-
 
    unsigned cur_line = 0; std::string line;
    while( std::getline( points, line ) )
@@ -991,10 +948,6 @@ void GP::LoadPoints( std::vector<std::vector<cl_float> > & out_x )
 
       // Here we append directly in m_Y because both CPU and GPU we use it (m_Y) throughout
       // the evolutionary process.
-
-
-
-  //    m_Y[out_x.size()] = v.back(); v.pop_back();
       m_Y.push_back( v.back() ); v.pop_back();
       
       // Update m_min_Y/m_max_Y (only useful for data classification)

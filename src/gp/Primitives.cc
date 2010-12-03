@@ -51,7 +51,7 @@ Primitives::Primitives(): m_need_identity( false ),
    Register( 0, "class",        "class",        "AS_INT( NODE )" );
    assert( GPT_CLASS == DB.size() - 1 );
 
-   Register( 3, "if-then-else", "ite",          "ARG(0) ? ARG(1) : ARG(2)" );
+   Register( 3, "ifthenelse",   "ite",          "ARG(0) ? ARG(1) : ARG(2)" );
 
    Register( 2, "add",          "+",            "ARG(0) + ARG(1)" );
    Register( 2, "and",          "&&",           "ARG(0) && ARG(1)" );

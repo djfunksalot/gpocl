@@ -146,8 +146,8 @@ protected:
    unsigned MaximumProgramSize() const { return m_params->m_maximum_tree_size + 1; }
    unsigned MaximumTreeSize() const { return m_params->m_maximum_tree_size; }
    /**
-     Return the size of program pointed by 'g'. The size of
-     a program is stored at its first position.
+     Return the size of program pointed by 'g'. The size of a program is stored
+     at its first position.
     */
    unsigned ProgramSize( const cl_uint* program ) const 
    { 
@@ -199,6 +199,7 @@ protected:
    ///unsigned Tournament( const cl_uint* pop, const cl_float* errors ) const;
    unsigned Tournament( const cl_uint* pop ) const;
    void Crossover( const cl_uint* mom, const cl_uint* dad, cl_uint* child ) const;
+#if 0
    /**
      Copy the individual @ref program_orig into @ref program_dest but
      with a random subtree mutated--a random subtree of same size is
@@ -207,14 +208,15 @@ protected:
     */
    void CopySubTreeMutate( const cl_uint* program_orig, cl_uint* program_dest ) const;
    /**
-     Like CopySubTreeMutate but it does the mutation in loco.
-    */
-   void SubTreeMutate( cl_uint* program ) const;
-   /**
      Copy the individual @ref program_orig into @ref program_dest but
      with a random node mutated.
     */
    void CopyNodeMutate( const cl_uint* program_orig, cl_uint* program_dest ) const;
+#endif
+   /**
+     Like CopySubTreeMutate but it does the mutation in loco.
+    */
+   void SubTreeMutate( cl_uint* program ) const;
    /**
      Like CopyNodeMutate but it does the mutation in loco.
     */
@@ -314,10 +316,7 @@ public:
    unsigned m_x_dim; /**< Number of input variables. */
    unsigned m_y_dim; /**< Number of output variables. Currently, always = 1. */
 
-   
-
    std::vector<cl_float> m_Y;
-   //cl_float* m_Y;
 
    static Params* m_params; /**< Pointer to Params class (holds the parameters). */
 };
