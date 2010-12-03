@@ -26,6 +26,8 @@
 
 #include "GPU.h"
 
+#include <iomanip>
+
 // -----------------------------------------------------------------------------
 void GPonGPU::LoadPoints()
 {
@@ -38,16 +40,16 @@ void GPonGPU::LoadPoints()
    /*
      TRANSPOSITION (for coalesced access on the GPU)
 
-                                Transformed and linearized data points
-                                 +---------++---------+   +---------+
-                                 | 1 2    q|| 1 2    q|   | 1 2    q|
-           +-------------------> |X X ...X ||X X ...X |...|X X ...X |
-           |                     | 1 1    1|| 2 2    2|   | p p    p|
-           |                     +---------++---------+   +---------+
+                                 Transformed and linearized data points
+                                 +----------++----------+   +----------+
+                                 | 1 2     q|| 1 2     q|   | 1 2     q|
+           +-------------------> |X X ... X ||X X ... X |...|X X ... X |
+           |                     | 1 1     1|| 2 2     2|   | p p     p|
+           |                     +----------++----------+   +----------+
            |                                ^             ^
-           |   +----------------------------+             |
-           |   |                                          |
-           |   |      +-----------------------------------+
+           |    ____________________________|             |
+           |   |       ___________________________________|
+           |   |      |
          +--++--+   +--+
          | 1|| 1|   | 1|
          |X ||X |...|X |
@@ -149,4 +151,82 @@ void FPI::CalculateNDRanges()
       m_compile_flags += " -D LOCAL_SIZE_IS_NOT_POWER_OF_2";
 }
 
+bool FPI::EvaluatePopulation( cl_uint* pop )
+{
+#if 0
+   // Write data to buffer (TODO: can we use mapbuffer here?)
+   /* 
+      What about creating two mapbuffers (to write directly to the device,
+      using CL_MEM_ALLOC_HOST_PTR), one for each population (cur/tmp), and then
+      passing them (alternately) when enqueueing the kernel? If mapbuffers mean
+      that we can save a copy by writing directly to the device, then could we
+      use efficiently this buffer in the host to access the populations, i.e.,
+      does mapbuffer keep a copy (synchronized) in the host?
+      */
+   m_queue.enqueueWriteBuffer( m_buf_pop, CL_TRUE, 0, 
+         sizeof( cl_uint ) * ( m_params->m_population_size * MaximumProgramSize() ),
+         pop, NULL, NULL);
+
+#ifdef PROFILING
+   cl::Event e_time;
+#endif
+   
+   for( unsigned i = 0; i < m_params->m_population_size; ++i )
+   {
+      // TODO: Set kernel arg (i, current program)
+
+      // ---------- begin kernel execution
+      m_queue.enqueueNDRangeKernel( m_kernel, cl::NDRange(), 
+            cl::NDRange( m_global_size ), cl::NDRange( m_local_size )
+#ifdef PROFILING
+            , NULL, &e_time
+#endif
+            );
+      // ---------- end kernel execution
+
+      // Wait until the kernel has finished
+      m_queue.finish();
+
+#ifdef PROFILING
+      cl_ulong started, ended, enqueued;
+      e_time.getProfilingInfo( CL_PROFILING_COMMAND_START, &started );
+      e_time.getProfilingInfo( CL_PROFILING_COMMAND_END, &ended );
+      e_time.getProfilingInfo( CL_PROFILING_COMMAND_QUEUED, &enqueued );
+
+      // FIXME (should be considered only one call?)
+      ++m_kernel_calls;
+
+      m_kernel_time += ended - started;
+      m_launch_time += started - enqueued;
+#endif
+
+      m_queue.enqueueReadBuffer( m_buf_E, CL_TRUE, 0, m_params->m_population_size * 
+                                 sizeof(cl_float), m_E, NULL, NULL );
+
+      // TODO: reduction (on the host)?
+      for( unsigned j = 0; j < m_global_size/m_local_size; ++j )
+
+
+      // --- Fitness calculation -----------------
+
+      // Check whether we have found a better solution
+      if( m_E[i] < m_best_error  ||
+            ( util::AlmostEqual( m_E[i], m_best_error ) && ProgramSize( pop, i ) < ProgramSize( m_best_program ) ) )
+      {
+         m_best_error = m_E[i];
+         Clone( Program( pop, i ), m_best_program );
+
+         std::cout << "\nEvolved: [" << std::setprecision(12) << m_best_error << "]\t{" 
+            << ProgramSize( m_best_program ) << "}\t";
+         PrintProgramPretty( m_best_program );
+         std::cout << "\n--------------------------------------------------------------------------------\n";
+      }
+      // TODO: Pick the best and fill the elitism vector (if any)
+   }
+
+   // We should stop the evolution if an error below the specified tolerance is found
+   return (m_best_error <= m_params->m_error_tolerance);
+   
+#endif
+}
 // -----------------------------------------------------------------------------

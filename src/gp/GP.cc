@@ -504,9 +504,8 @@ bool GP::EvaluatePopulation( cl_uint* pop )
    m_launch_time += started - enqueued;
 #endif
 
-   m_queue.enqueueReadBuffer( m_buf_E, CL_TRUE, 0,
-         m_params->m_population_size * sizeof(cl_float),
-         m_E, NULL, NULL );
+   m_queue.enqueueReadBuffer( m_buf_E, CL_TRUE, 0, m_params->m_population_size * 
+                              sizeof(cl_float), m_E, NULL, NULL );
 
    // --- Fitness calculation -----------------
 
@@ -615,10 +614,10 @@ void GP::CreateBuffers()
 
    // Buffer (memory on the device) of partial errors
 #ifndef NDEBUG
-   std::cout << "Trying to allocate " << sizeof( cl_float ) * m_local_size * m_params->m_population_size << " bytes for the prediction errors\n";
+   std::cout << "Trying to allocate " << sizeof( cl_float ) * m_params->m_population_size << " bytes for the prediction errors\n";
 #endif
    m_buf_E = cl::Buffer( m_context, CL_MEM_WRITE_ONLY,
-                         m_local_size * m_params->m_population_size * sizeof(cl_float) );
+                         m_params->m_population_size * sizeof(cl_float) );
 
   /* 
    Structure of a program (individual)

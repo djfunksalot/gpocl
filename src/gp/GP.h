@@ -183,7 +183,7 @@ protected:
    void SetProgramSize( cl_uint* program, unsigned size ) const { *program = size; }
 
    ///bool EvaluatePopulation( cl_uint* pop, cl_float* errors );
-   bool EvaluatePopulation( cl_uint* pop  );
+   virtual bool EvaluatePopulation( cl_uint* pop  );
    void InitializePopulation( cl_uint* pop );
    ///void Breed( cl_uint* old_pop, cl_uint* new_pop, const cl_float* );
    void Breed( cl_uint* old_pop, cl_uint* new_pop );
@@ -298,7 +298,6 @@ protected:
     put in the given argument (matrix). */
    void LoadPoints( std::vector<std::vector<cl_float> > & );
 
-   //virtual void EvaluatePop() {};
    unsigned m_tournament_size; /**< Tournament size. */
 
 

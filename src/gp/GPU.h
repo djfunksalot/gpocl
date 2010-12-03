@@ -108,6 +108,7 @@ public:
 
       m_kernel.setArg( 4, sizeof(uint) * MaximumTreeSize(), NULL );
    }
+   bool EvaluatePopulation( cl_uint* pop );
 
 };
 
