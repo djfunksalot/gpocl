@@ -171,12 +171,6 @@ Params::Initialize()
       return false; /* exit */ 
    }
 
-   if( m_data_points.empty() )
-   {
-      ShowUsage();
-      throw Error( "Missing data points filename" );
-   }
-
    // --- verbose
    m_verbose = Opts.Bool.Get( "-v" );
 

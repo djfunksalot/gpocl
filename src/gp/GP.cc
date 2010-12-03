@@ -899,6 +899,9 @@ void GP::CreateLinearTree( cl_uint* node, unsigned size ) const
 // -----------------------------------------------------------------------------
 void GP::LoadPoints( std::vector<std::vector<cl_float> > & out_x )
 {
+   if( m_params->m_data_points.empty() )
+      throw Error( "Missing data points filename" );
+   
    using namespace util;
 
    // We will consider just the first file name given by the user
