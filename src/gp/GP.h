@@ -137,6 +137,7 @@ protected:
 
    unsigned MaximumProgramSize() const { return m_params->m_maximum_tree_size + 1; }
    unsigned MaximumTreeSize() const { return m_params->m_maximum_tree_size; }
+   unsigned MinimumTreeSize() const { return m_params->m_minimum_tree_size; }
    /**
      Return the size of program pointed by 'g'. The size of a program is stored
      at its first position.

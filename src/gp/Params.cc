@@ -84,8 +84,10 @@ Params::ShowUsage( const char* app = "gpocl" ) const // -h or --help
    << "     selection pressure (tournament size), n>=1 [default = 3]\n"
    << "  -es <n>, --elitism-size <n>\n"
    << "     elitism size [default = 1]\n"
-   << "  -ms <n>, --maximum-size <n>\n"
+   << "  -max <n>, --maximum-size <n>\n"
    << "     maximum program size [default = 20]\n"
+   << "  -min <n>, --minimum-size <n>\n"
+   << "     minimum program size [default = 1]\n"
    << "  -et <n>, --error-tolerance <f>\n"
    << "     tolerance of error (stop criterion) [default = none]\n"
    << "\n"
@@ -128,7 +130,8 @@ Params::Initialize()
    Opts.Float.Add( "-mp", "--mutation-probability", 0.10, 0.0, 1.0 );
    Opts.Int.Add( "-sp", "--seletion-pressure", 3, 1, numeric_limits<int>::max() );
    Opts.Int.Add( "-es", "--elitism-size", 1, 0, numeric_limits<int>::max() );
-   Opts.Int.Add( "-ms", "--maximum-size", 20, 1, numeric_limits<int>::max() );
+   Opts.Int.Add( "-max", "--maximum-size", 20, 1, numeric_limits<int>::max() );
+   Opts.Int.Add( "-min", "--minimum-size", 1, 1, numeric_limits<int>::max() );
 
    Opts.Float.Add( "-et", "--error-tolerance", -1.0, 0.0 );
 
@@ -189,8 +192,10 @@ Params::Initialize()
    m_crossover_probability = Opts.Float.Get( "-cp" );
    m_mutation_probability = Opts.Float.Get( "-mp" );
    m_elitism_size = Opts.Int.Get( "-es" );
-   m_maximum_tree_size = Opts.Int.Get( "-ms" );
 
+   m_maximum_tree_size = Opts.Int.Get( "-max" );
+   m_minimum_tree_size = std::min( (int) Opts.Int.Get( "-min" ), m_maximum_tree_size );
+   
    // -- Selection pressure (currently "tournament size")
    m_tournament_size = Opts.Int.Get( "-sp" );
                                               

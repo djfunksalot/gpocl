@@ -210,7 +210,9 @@ void GP::Crossover( const cl_uint* mom, const cl_uint* dad, cl_uint* child ) con
       dad_subtree_size = TreeSize( dad + pt_dad );
 
       child_program_size = ProgramSize( mom ) - mom_subtree_size + dad_subtree_size;
-   } while( child_program_size > MaximumTreeSize() );
+   } while( child_program_size > MaximumTreeSize() || 
+            child_program_size < MinimumTreeSize() ); // TODO: check how many loops it is
+                                                      // performing here to satisfy the conditions.
 
    SetProgramSize( child, child_program_size );
 
@@ -241,14 +243,16 @@ void GP::SubTreeMutate( cl_uint* program ) const
 {
    assert( program != NULL );
    assert( ProgramSize( program ) <= MaximumTreeSize() );
+   assert( ProgramSize( program ) >= MinimumTreeSize() );
 
    // Pos 0 is the program size; pos 1 is the first node and 'program size + 1'
    // is the last node.
    unsigned mutation_pt = Random::Int( 1, ProgramSize( program ) ); // [1, size] (inclusive)
 
    unsigned subtree_size = TreeSize( program + mutation_pt );
-   unsigned new_subtree_size = Random::Int( 1, 
-            MaximumTreeSize() - ( ProgramSize( program ) - subtree_size ) );
+   unsigned new_subtree_size = Random::Int( 
+           std::max( 1, int( MinimumTreeSize() - ( ProgramSize( program ) - subtree_size ) ) ), 
+                             MaximumTreeSize() - ( ProgramSize( program ) - subtree_size ) );
   
    // Set the resulting tree size to the newly generated program
    SetProgramSize( program, ProgramSize( program ) + (new_subtree_size - subtree_size) );
@@ -359,6 +363,7 @@ void GP::NodeMutate( cl_uint* program ) const
 {
    assert( program != NULL );
    assert( ProgramSize( program ) <= MaximumTreeSize() );
+   assert( ProgramSize( program ) >= MinimumTreeSize() );
 
    // Pos 0 is the program size; pos 1 is the first node and 'program size + 1'
    // is the last node.
@@ -453,7 +458,8 @@ void GP::CopyNodeMutate( const cl_uint* program_orig, cl_uint* program_dest ) co
 void GP::Clone( cl_uint* program_orig, cl_uint* program_dest ) const
 {
    assert( program_orig != NULL && program_dest != NULL );
-   assert( *program_orig <= MaximumTreeSize() );
+   assert( ProgramSize( program_orig ) <= MaximumTreeSize() );
+   assert( ProgramSize( program_orig ) >= MinimumTreeSize() );
 
    // The size is the first element
    for( unsigned i = *program_orig + 1; i-- ; ) *program_dest++ = *program_orig++;
@@ -776,7 +782,7 @@ void GP::InitializePopulation( cl_uint* pop )
 {
    for( unsigned i = 0; i < m_params->m_population_size; ++i )
    {
-      cl_uint tree_size = Random::Int( 1, MaximumTreeSize() );
+      cl_uint tree_size = Random::Int( MinimumTreeSize(), MaximumTreeSize() );
 
       cl_uint* program = Program( pop, i );
 

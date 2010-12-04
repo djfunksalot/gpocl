@@ -91,6 +91,7 @@ public:
    int m_tournament_size; /**< Selection pressure */
    int m_elitism_size; /**< Elitism size */
    int m_maximum_tree_size; /**< The maximum allowed size for a program. */
+   int m_minimum_tree_size; /**< The minimum allowed size for a program. */
    int m_max_local_size; /**< The maximum allowed work group size. */
    float m_crossover_probability; /**< Crossover probability */
    float m_mutation_probability; /**< Mutation probability */
