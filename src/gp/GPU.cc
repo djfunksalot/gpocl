@@ -240,8 +240,9 @@ bool FPI::EvaluatePopulation( cl_uint* pop )
       // TODO: Pick the best and fill the elitism vector (if any)
 
       // We should stop the evolution if an error below the specified tolerance is found
-      return (m_best_error <= m_params->m_error_tolerance);
    }
+
+   return (m_best_error <= m_params->m_error_tolerance);
 }
 
 // -----------------------------------------------------------------------------
