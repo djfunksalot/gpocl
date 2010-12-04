@@ -34,6 +34,7 @@
 #include <cassert>
 #include <limits>
 #include <iomanip>
+#include <ctime>
 
 Params* GP::m_params = 0;
 
@@ -93,6 +94,10 @@ void GP::Evolve()
    20: return the best individual so far
    */
 
+   // ------
+   std::clock_t start = std::clock();
+   // ------
+
    m_E = new cl_float[ m_params->m_population_size ];
 
    cl_uint* pop_a = new cl_uint[ m_params->m_population_size * MaximumProgramSize() ];
@@ -102,20 +107,23 @@ void GP::Evolve()
    cl_uint* tmp_pop = pop_b;
 
    // 1:
-   std::cout << "\n[Gen 1 of " << m_params->m_number_of_generations << "]...\n";
+//   std::cout << "\n[Gen 1 of " << m_params->m_number_of_generations << "]...\n";
    InitializePopulation( cur_pop );
    // 2:
    ///EvaluatePopulation( cur_pop, errors );
    EvaluatePopulation( cur_pop );
 
+   // ---------
+   std::cout << "[Gen " << 1 << " of " << m_params->m_number_of_generations  << "] (Error: " << std::setprecision(10) << m_best_error << ", size: " << ProgramSize( m_best_program ) << ")... ";
+#ifdef PROFILING
+   std::cout << std::setprecision(2) << std::fixed << "| GPop/s: " << m_node_evaluations / (m_kernel_time/1.0E9) << std::setprecision(4) << " | Node evals: " << m_node_evaluations << " | Avg. KET(ms): " << m_kernel_time / (m_kernel_calls * 1.0E6) << " | Avg. KLT(ms): " << m_launch_time / (m_kernel_calls * 1.0E6) << " | Acc. KET(s): " << m_kernel_time/1.0E+9 << " | Acc. KLT(s): " << m_launch_time/1.0E+9 << " | Kernel calls: " << m_kernel_calls;
+#endif
+   std::cout << " | ET(s): " << ( std::clock() - start ) / double(CLOCKS_PER_SEC) << std::endl;
+   // ---------
+
    // 3:
    for( unsigned gen = 2; gen <= m_params->m_number_of_generations; ++gen )
    {
-      std::cout << "[Gen " << gen << " of " << m_params->m_number_of_generations  << "] (Error: " << std::setprecision(10) << m_best_error << ", size: " << ProgramSize( m_best_program ) << ")... ";
-#ifdef PROFILING
-      std::cout << std::setprecision(2) << std::fixed << "[GPop/s: " << m_node_evaluations / (m_kernel_time/1.0E9) << std::setprecision(4) << " | Node evals: " << m_node_evaluations << " | Avg. KET: " << m_kernel_time / (m_kernel_calls * 1.0E6) << "ms | Avg. KLT: " << m_launch_time / (m_kernel_calls * 1.0E6) << "ms | Acc. KET: " << m_kernel_time/1.0E+9 << "s | Acc. KLT: " << m_launch_time/1.0E+9 << "s | Kernel calls: " << m_kernel_calls << "]";
-#endif
-      std::cout << std::endl;
       // 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16:
       ///Breed( cur_pop, tmp_pop, errors );
       Breed( cur_pop, tmp_pop );
@@ -125,18 +133,21 @@ void GP::Evolve()
 
       // 18:
       std::swap( cur_pop, tmp_pop );
+
+   // ---------
+   std::cout << "[Gen " << gen << " of " << m_params->m_number_of_generations  << "] (Error: " << std::setprecision(10) << m_best_error << ", size: " << ProgramSize( m_best_program ) << ")... ";
+#ifdef PROFILING
+   std::cout << std::setprecision(2) << std::fixed << "| GPop/s: " << m_node_evaluations / (m_kernel_time/1.0E9) << std::setprecision(4) << " | Node evals: " << m_node_evaluations << " | Avg. KET(ms): " << m_kernel_time / (m_kernel_calls * 1.0E6) << " | Avg. KLT(ms): " << m_launch_time / (m_kernel_calls * 1.0E6) << " | Acc. KET(s): " << m_kernel_time/1.0E+9 << " | Acc. KLT(s): " << m_launch_time/1.0E+9 << " | Kernel calls: " << m_kernel_calls;
+#endif
+   std::cout << " | ET(s): " << ( std::clock() - start ) / double(CLOCKS_PER_SEC) << std::endl;
+   // ---------
    } // 19
 
    // 20:
-   std::cout << "\n> Best: [" << std::setprecision(12) << m_best_error << "]\t{" 
+   std::cout << "\n> Best: [" << std::setprecision(16) << m_best_error << "]\t{" 
       << ProgramSize( m_best_program ) << "}\t";
    PrintProgramPretty( m_best_program );
    std::cout << std::endl;
-
-#ifdef PROFILING
-   std::cout << std::setprecision(2) << std::fixed << "\n> GPop/s: " << m_node_evaluations / (m_kernel_time/1.0E9) << std::setprecision(4) << " | Node evals: " << m_node_evaluations << " | Avg. KET: " << m_kernel_time / (m_kernel_calls * 1.0E6) << "ms | Avg. KLT: " << m_launch_time / (m_kernel_calls * 1.0E6) << "ms | Acc. KET: " << m_kernel_time/1.0E+9 << "s | Acc. KLT: " << m_launch_time/1.0E+9 << "s | Kernel calls: " << m_kernel_calls << "\n";
-#endif
-   std::cout << "> Strategy: "; PrintStrategy(); std::cout << "\n";
 
    // Clean up
    delete[] pop_a;
