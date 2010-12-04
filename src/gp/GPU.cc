@@ -152,15 +152,6 @@ void FPI::CalculateNDRanges()
 }
 
 // -----------------------------------------------------------------------------
-/** The FPI strategy needs a specialized EvaluatePopulation procedure because
-    it is better to evaluate one program per kernel launch instead of the
-    entire population as in the CPU, PPCU, and PPCE strategy.
-
-    Using atomic add (for float) would allow us to easily evaluate the entire
-    population at once, but atomic operations for float types are not easy/fast
-    on the current generation of GPU hardware--and because that not fully
-    supported by the current OpenCL specification.
- */ 
 bool FPI::EvaluatePopulation( cl_uint* pop )
 {
    // Write data to buffer (TODO: can we use mapbuffer here?)
@@ -171,63 +162,71 @@ bool FPI::EvaluatePopulation( cl_uint* pop )
       that we can save a copy by writing directly to the device, then could we
       use efficiently this buffer in the host to access the populations, i.e.,
       does mapbuffer keep a copy (synchronized) in the host?
-      */
+    */
    m_queue.enqueueWriteBuffer( m_buf_pop, CL_TRUE, 0, sizeof( cl_uint ) * 
          ( m_params->m_population_size * MaximumProgramSize() ), pop, NULL, NULL);
 
 #ifdef PROFILING
    cl::Event e_time;
 #endif
-   
-   // Evaluate one program per kernel execution
+
+   // ---------- begin kernel execution
+   m_queue.enqueueNDRangeKernel( m_kernel, cl::NDRange(), 
+         cl::NDRange( m_global_size ), cl::NDRange( m_local_size )
+#ifdef PROFILING
+         , NULL, &e_time
+#endif
+         );
+   // ---------- end kernel execution
+
+   // Wait until the kernel has finished
+   m_queue.finish();
+
+#ifdef PROFILING
+   cl_ulong started, ended, enqueued;
+   e_time.getProfilingInfo( CL_PROFILING_COMMAND_START, &started );
+   e_time.getProfilingInfo( CL_PROFILING_COMMAND_END, &ended );
+   e_time.getProfilingInfo( CL_PROFILING_COMMAND_QUEUED, &enqueued );
+
+   ++m_kernel_calls;
+
+   m_kernel_time += ended - started;
+   m_launch_time += started - enqueued;
+#endif
+
+   // -----------------------------------------------------------------------
+   /*
+      Each kernel execution will put in m_buf_E the partial errors of each program:
+
+      |  0 |  0 |     |  0    ||   1 |  1 |     |  1   |     |  p-1 |  p-1 |     |  p-1 |
+      | E  | E  | ... | E     ||  E  | E  | ... | E    | ... | E    | E    | ... | E    |        
+      |  0 |  1 |     |  n-1  ||   0 |  1 |     |  n-1 |     |  0   |  1   |     |  n-1 |    
+
+
+      where 'p-1' is the index of the last program, and 'n-1' is the index of the
+      last 'partial error', that is, 'n-1' is the index of the last work-group (gr_id).
+    */
+
+   const unsigned num_work_groups = m_global_size / m_local_size;
+
+   // The line below maps the contents of 'm_buf_E' into 'partial_errors'.
+   cl_float* partial_errors = (cl_float*) 
+            m_queue.enqueueMapBuffer( m_buf_E, CL_TRUE, CL_MAP_READ, 0, 
+            m_params->m_population_size * num_work_groups * sizeof(cl_float) );
+
+   // Reduction on host!
    for( unsigned p = 0; p < m_params->m_population_size; ++p )
    {
-      // Pass the start position of the program we want to be evaluated
-      uint program_id = (m_params->m_maximum_tree_size + 1) * p;
-      m_kernel.setArg( 5, sizeof(uint), &program_id );
-
-      // ---------- begin kernel execution
-      m_queue.enqueueNDRangeKernel( m_kernel, cl::NDRange(), 
-                       cl::NDRange( m_global_size ), cl::NDRange( m_local_size )
-#ifdef PROFILING
-            , NULL, &e_time
-#endif
-            );
-      // ---------- end kernel execution
-
-      // Wait until the kernel has finished
-      m_queue.finish();
-
-#ifdef PROFILING
-      cl_ulong started, ended, enqueued;
-      e_time.getProfilingInfo( CL_PROFILING_COMMAND_START, &started );
-      e_time.getProfilingInfo( CL_PROFILING_COMMAND_END, &ended );
-      e_time.getProfilingInfo( CL_PROFILING_COMMAND_QUEUED, &enqueued );
-
-      ++m_kernel_calls;
-
-      m_kernel_time += ended - started;
-      m_launch_time += started - enqueued;
-#endif
-
-      // -----------------------------------------------------------------------
-      // Mapping (there is one accumulated error per work-group)
-      // The line below maps the contents of 'm_buf_E' into 'partial_errors'.
-      cl_float* partial_errors = (cl_float*) m_queue.enqueueMapBuffer( m_buf_E,
-            CL_TRUE, CL_MAP_READ, 0, (m_global_size / m_local_size) * sizeof(cl_float) );
-
-      // Reduction on host! (we only need to perform 'work-group' adds)
       m_E[p] = 0.0f;
-      for( unsigned i = 0; i < m_global_size/m_local_size; ++i ) m_E[p] += partial_errors[i];
+      for( unsigned gr_id = 0; gr_id < num_work_groups; ++gr_id ) 
+         m_E[p] += partial_errors[p * num_work_groups + gr_id];
 
-      // Unmapping
-      m_queue.enqueueUnmapMemObject( m_buf_E, partial_errors ); 
       // -----------------------------------------------------------------------
 
       // Check whether we have found a better solution
       if( m_E[p] < m_best_error  ||
-        ( util::AlmostEqual( m_E[p], m_best_error ) && 
-          ProgramSize( pop, p ) < ProgramSize( m_best_program ) ) )
+            ( util::AlmostEqual( m_E[p], m_best_error ) && 
+              ProgramSize( pop, p ) < ProgramSize( m_best_program ) ) )
       {
          m_best_error = m_E[p];
          Clone( Program( pop, p ), m_best_program );
@@ -237,11 +236,14 @@ bool FPI::EvaluatePopulation( cl_uint* pop )
          PrintProgramPretty( m_best_program );
          std::cout << "\n--------------------------------------------------------------------------------\n";
       }
-      // TODO: Pick the best and fill the elitism vector (if any)
-
-      // We should stop the evolution if an error below the specified tolerance is found
    }
 
+   // Unmapping
+   m_queue.enqueueUnmapMemObject( m_buf_E, partial_errors ); 
+
+   // TODO: Pick the best and fill the elitism vector (if any)
+
+   // We should stop the evolution if an error below the specified tolerance is found
    return (m_best_error <= m_params->m_error_tolerance);
 }
 

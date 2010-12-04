@@ -108,8 +108,6 @@ public:
 
       // Allocate the memory for caching the program
       m_kernel.setArg( 4, sizeof(uint) * MaximumTreeSize(), NULL );
-
-      // The last argument will be set on the EvaluatePopulation procedure
    }
 
    void CreateBuffers()
@@ -118,10 +116,10 @@ public:
       CreateBufferPopulation();
 
 #ifndef NDEBUG
-      std::cout << "Trying to allocate " << (m_global_size / m_local_size) * sizeof(cl_float) << " bytes for the partial prediction errors\n";
+      std::cout << "Trying to allocate " << m_params->m_population_size * (m_global_size / m_local_size) * sizeof(cl_float) << " bytes for the partial prediction errors\n";
 #endif
       m_buf_E = cl::Buffer( m_context, CL_MEM_WRITE_ONLY | CL_MEM_ALLOC_HOST_PTR,
-                           (m_global_size / m_local_size) * sizeof(cl_float) );
+                           m_params->m_population_size * (m_global_size / m_local_size) * sizeof(cl_float) );
    }
 
    bool EvaluatePopulation( cl_uint* pop );
