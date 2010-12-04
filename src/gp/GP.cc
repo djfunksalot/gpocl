@@ -594,6 +594,14 @@ void GP::OpenCLInit()
 // -----------------------------------------------------------------------------
 void GP::CreateBuffers()
 {
+   CreateBufferDataPoints();
+   CreateBufferErrors();
+   CreateBufferPopulation();
+}
+
+// -----------------------------------------------------------------------------
+void GP::CreateBufferDataPoints()
+{
    //TODO: Optimize for CPU (USE_HOST_PTR?)
 
    // Buffer (memory on the device) of training points
@@ -611,14 +619,22 @@ void GP::CreateBuffers()
    m_buf_Y = cl::Buffer( m_context,
                          CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
                          sizeof( cl_float ) * m_num_points, &m_Y[0] );
+}
 
-   // Buffer (memory on the device) of partial errors
+// -----------------------------------------------------------------------------
+void GP::CreateBufferErrors()
+{
+   // Buffer (memory on the device) of prediction errors (one per program)
 #ifndef NDEBUG
    std::cout << "Trying to allocate " << sizeof( cl_float ) * m_params->m_population_size << " bytes for the prediction errors\n";
 #endif
    m_buf_E = cl::Buffer( m_context, CL_MEM_WRITE_ONLY,
                          m_params->m_population_size * sizeof(cl_float) );
+}
 
+// -----------------------------------------------------------------------------
+void GP::CreateBufferPopulation()
+{
   /* 
    Structure of a program (individual)
 

@@ -151,9 +151,18 @@ void FPI::CalculateNDRanges()
       m_compile_flags += " -D LOCAL_SIZE_IS_NOT_POWER_OF_2";
 }
 
+// -----------------------------------------------------------------------------
+/** The FPI strategy needs a specialized EvaluatePopulation procedure because
+    it is better to evaluate one program per kernel launch instead of the
+    entire population as in the CPU, PPCU, and PPCE strategy.
+
+    Using atomic add (for float) would allow us to easily evaluate the entire
+    population at once, but atomic operations for float types are not easy/fast
+    on the current generation of GPU hardware--and because that not fully
+    supported by the current OpenCL specification.
+ */ 
 bool FPI::EvaluatePopulation( cl_uint* pop )
 {
-#if 0
    // Write data to buffer (TODO: can we use mapbuffer here?)
    /* 
       What about creating two mapbuffers (to write directly to the device,
@@ -163,21 +172,23 @@ bool FPI::EvaluatePopulation( cl_uint* pop )
       use efficiently this buffer in the host to access the populations, i.e.,
       does mapbuffer keep a copy (synchronized) in the host?
       */
-   m_queue.enqueueWriteBuffer( m_buf_pop, CL_TRUE, 0, 
-         sizeof( cl_uint ) * ( m_params->m_population_size * MaximumProgramSize() ),
-         pop, NULL, NULL);
+   m_queue.enqueueWriteBuffer( m_buf_pop, CL_TRUE, 0, sizeof( cl_uint ) * 
+         ( m_params->m_population_size * MaximumProgramSize() ), pop, NULL, NULL);
 
 #ifdef PROFILING
    cl::Event e_time;
 #endif
    
-   for( unsigned i = 0; i < m_params->m_population_size; ++i )
+   // Evaluate one program per kernel execution
+   for( unsigned p = 0; p < m_params->m_population_size; ++p )
    {
-      // TODO: Set kernel arg (i, current program)
+      // Pass the start position of the program we want to be evaluated
+      uint program_id = (m_params->m_maximum_tree_size + 1) * p;
+      m_kernel.setArg( 5, sizeof(uint), &program_id );
 
       // ---------- begin kernel execution
       m_queue.enqueueNDRangeKernel( m_kernel, cl::NDRange(), 
-            cl::NDRange( m_global_size ), cl::NDRange( m_local_size )
+                       cl::NDRange( m_global_size ), cl::NDRange( m_local_size )
 #ifdef PROFILING
             , NULL, &e_time
 #endif
@@ -193,28 +204,33 @@ bool FPI::EvaluatePopulation( cl_uint* pop )
       e_time.getProfilingInfo( CL_PROFILING_COMMAND_END, &ended );
       e_time.getProfilingInfo( CL_PROFILING_COMMAND_QUEUED, &enqueued );
 
-      // FIXME (should be considered only one call?)
       ++m_kernel_calls;
 
       m_kernel_time += ended - started;
       m_launch_time += started - enqueued;
 #endif
 
-      m_queue.enqueueReadBuffer( m_buf_E, CL_TRUE, 0, m_params->m_population_size * 
-                                 sizeof(cl_float), m_E, NULL, NULL );
+      // -----------------------------------------------------------------------
+      // Mapping (there is one accumulated error per work-group)
+      // The line below maps the contents of 'm_buf_E' into 'partial_errors'.
+      cl_float* partial_errors = (cl_float*) m_queue.enqueueMapBuffer( m_buf_E,
+            CL_TRUE, CL_MAP_READ, 0, (m_global_size / m_local_size) * sizeof(cl_float) );
 
-      // TODO: reduction (on the host)?
-      for( unsigned j = 0; j < m_global_size/m_local_size; ++j )
+      // Reduction on host! (we only need to perform 'work-group' adds)
+      m_E[p] = 0.0f;
+      for( unsigned i = 0; i < m_global_size/m_local_size; ++i ) m_E[p] += partial_errors[i];
 
-
-      // --- Fitness calculation -----------------
+      // Unmapping
+      m_queue.enqueueUnmapMemObject( m_buf_E, partial_errors ); 
+      // -----------------------------------------------------------------------
 
       // Check whether we have found a better solution
-      if( m_E[i] < m_best_error  ||
-            ( util::AlmostEqual( m_E[i], m_best_error ) && ProgramSize( pop, i ) < ProgramSize( m_best_program ) ) )
+      if( m_E[p] < m_best_error  ||
+        ( util::AlmostEqual( m_E[p], m_best_error ) && 
+          ProgramSize( pop, p ) < ProgramSize( m_best_program ) ) )
       {
-         m_best_error = m_E[i];
-         Clone( Program( pop, i ), m_best_program );
+         m_best_error = m_E[p];
+         Clone( Program( pop, p ), m_best_program );
 
          std::cout << "\nEvolved: [" << std::setprecision(12) << m_best_error << "]\t{" 
             << ProgramSize( m_best_program ) << "}\t";
@@ -222,11 +238,10 @@ bool FPI::EvaluatePopulation( cl_uint* pop )
          std::cout << "\n--------------------------------------------------------------------------------\n";
       }
       // TODO: Pick the best and fill the elitism vector (if any)
-   }
 
-   // We should stop the evolution if an error below the specified tolerance is found
-   return (m_best_error <= m_params->m_error_tolerance);
-   
-#endif
+      // We should stop the evolution if an error below the specified tolerance is found
+      return (m_best_error <= m_params->m_error_tolerance);
+   }
 }
+
 // -----------------------------------------------------------------------------

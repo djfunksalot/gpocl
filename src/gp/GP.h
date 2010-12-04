@@ -229,10 +229,7 @@ protected:
    {
       /* We have a valid tree when the sum of the arity minus one equals to -1 */
       unsigned size = 0; int sum = 0;
-      do {
-         ++size;
-         sum += ARITY( *node++ ) - 1;
-      } while( sum != -1 );
+      do { ++size; sum += ARITY( *node++ ) - 1; } while( sum != -1 );
 
       return size;
    }
@@ -247,7 +244,12 @@ protected:
    // OpenCL related functions
 
    void OpenCLInit();
-   void CreateBuffers();
+
+   virtual void CreateBuffers();
+   void CreateBufferPopulation();
+   void CreateBufferDataPoints();
+   void CreateBufferErrors();
+
    void BuildKernel();
    virtual void SetKernelArgs()
    {
