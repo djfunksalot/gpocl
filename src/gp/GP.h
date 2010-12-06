@@ -139,6 +139,7 @@ public:
 #ifndef NDEBUG
       std::cout << "Total local memory/CU (bytes): " << m_device.getInfo<CL_DEVICE_LOCAL_MEM_SIZE>()
                 << ", used by the kernel: " << m_kernel.getWorkGroupInfo<CL_KERNEL_LOCAL_MEM_SIZE>( m_device )
+                << ", private memory used by each work-item: " << m_kernel.getWorkGroupInfo<CL_KERNEL_PRIVATE_MEM_SIZE>( m_device )
                 << ", actual work-group size: " << m_kernel.getWorkGroupInfo<CL_KERNEL_WORK_GROUP_SIZE>( m_device )
                 << std::endl;
 #endif

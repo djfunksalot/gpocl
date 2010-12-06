@@ -87,6 +87,17 @@ int main( int argc, char** argv )
    } 
    catch( cl::Error& e ) {
       std::cerr << '\n' << "> Error: " << e.what() << std::endl;
+
+      switch( e.err() )
+      {
+         case CL_OUT_OF_RESOURCES:
+            std::cerr << "CL_OUT_OF_RESOURCES: failure to allocate resources required by the OpenCL implementation on the device.\n";
+            break;
+         case CL_OUT_OF_HOST_MEMORY:
+            std::cerr << "CL_OUT_OF_HOST_MEMORY: failure to allocate resources required by the OpenCL implementation on the host.\n";
+            break;
+      }
+
       return 4;
    }
    catch( const std::exception& e ) {
