@@ -50,7 +50,6 @@
 
 #include "Primitives.h"
 
-// Functions definition
 #include "kernels/common.cl"
 
 #include <string>
@@ -98,36 +97,56 @@ public:
 
    void Run()
    {
-      if( m_params->m_print_primitives )
-      {
-         m_primitives.ShowAvailablePrimitives();
+      // ------------------------------------------------------------
+      if( m_params->m_print_primitives ) { m_primitives.ShowAvailablePrimitives(); return; }
+      // ------------------------------------------------------------
 
-         return;
-      }
-
-      // [virtual] Load training points (CPU != GPU)
+      // ------------------------------------------------------------
+      // Load training points
       LoadPoints();
+      // ------------------------------------------------------------
 
+      // ------------------------------------------------------------
       // Load primitives
       m_primitives.Load( m_x_dim, m_params->m_maximum_tree_size, m_params->m_primitives );
+      // ------------------------------------------------------------
 
+      // ------------------------------------------------------------
       // Create context/devices
       // Create queue
       OpenCLInit();
+      // ------------------------------------------------------------
 
-      // [virtual]
+      // ------------------------------------------------------------
       CalculateNDRanges();
-      std::cout << "NDRanges: [local: " << m_local_size << ", global: " << m_global_size << "]\n";
+#ifndef NDEBUG
+      std::cout << "NDRanges: [local: " << m_local_size << ", global: " << m_global_size << ", work-groups: " << m_global_size/m_local_size << "]\n";
+#endif
+      // ------------------------------------------------------------
 
+      // ------------------------------------------------------------
       // Create buffers
       CreateBuffers();
+      // ------------------------------------------------------------
 
+      // ------------------------------------------------------------
       // Create program ("build kernel")
       BuildKernel();
+      // ------------------------------------------------------------
 
+      // ------------------------------------------------------------
       SetKernelArgs();
+#ifndef NDEBUG
+      std::cout << "Total local memory/CU (bytes): " << m_device.getInfo<CL_DEVICE_LOCAL_MEM_SIZE>()
+                << ", used by the kernel: " << m_kernel.getWorkGroupInfo<CL_KERNEL_LOCAL_MEM_SIZE>( m_device )
+                << ", actual work-group size: " << m_kernel.getWorkGroupInfo<CL_KERNEL_WORK_GROUP_SIZE>( m_device )
+                << std::endl;
+#endif
+      // ------------------------------------------------------------
 
+      // ------------------------------------------------------------
       Evolve();
+      // ------------------------------------------------------------
    }
 
    virtual void PrintStrategy() const = 0;
