@@ -915,6 +915,8 @@ void GP::CreateLinearTree( cl_uint* node, unsigned size ) const
 // -----------------------------------------------------------------------------
 void GP::LoadPoints( std::vector<std::vector<cl_float> > & out_x )
 {
+   const char separator = ',';
+
    if( m_params->m_data_points.empty() )
       throw Error( "Missing data points filename" );
    
@@ -937,8 +939,10 @@ void GP::LoadPoints( std::vector<std::vector<cl_float> > & out_x )
       if( line.empty() || line[0] == '#' || line[0] == '%' ) continue;
 
       std::stringstream ss( line ); std::string cell; std::vector<cl_float> v;
-      while( std::getline( ss, cell, ',' ) )
+      while( std::getline( ss, cell, separator ) )
       {
+         if( cell.empty() ) continue; // ignore adjacent occurrence of the separator
+
          cl_float element;
          if( !StringTo( element, cell ) )
             // This means that 'cell' couldn't be converted to a float numeral type. It is

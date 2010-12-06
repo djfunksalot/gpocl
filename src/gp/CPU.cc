@@ -65,4 +65,3 @@ void GPonCPU::LoadPoints()
       std::cout << m_Y[i] << " ";
     */
 }
-
