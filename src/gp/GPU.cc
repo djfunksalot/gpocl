@@ -152,48 +152,8 @@ void FPI::CalculateNDRanges()
 }
 
 // -----------------------------------------------------------------------------
-bool FPI::EvaluatePopulation( cl_uint* pop )
+void FPI::CalculateErrors( const cl_uint* pop )
 {
-   // Write data to buffer (TODO: can we use mapbuffer here?)
-   /* 
-      What about creating two mapbuffers (to write directly to the device,
-      using CL_MEM_ALLOC_HOST_PTR), one for each population (cur/tmp), and then
-      passing them (alternately) when enqueueing the kernel? If mapbuffers mean
-      that we can save a copy by writing directly to the device, then could we
-      use efficiently this buffer in the host to access the populations, i.e.,
-      does mapbuffer keep a copy (synchronized) in the host?
-    */
-   m_queue.enqueueWriteBuffer( m_buf_pop, CL_TRUE, 0, sizeof( cl_uint ) * 
-         ( m_params->m_population_size * MaximumProgramSize() ), pop, NULL, NULL);
-
-#ifdef PROFILING
-   cl::Event e_time;
-#endif
-
-   // ---------- begin kernel execution
-   m_queue.enqueueNDRangeKernel( m_kernel, cl::NDRange(), 
-         cl::NDRange( m_global_size ), cl::NDRange( m_local_size )
-#ifdef PROFILING
-         , NULL, &e_time
-#endif
-         );
-   // ---------- end kernel execution
-
-   // Wait until the kernel has finished
-   m_queue.finish();
-
-#ifdef PROFILING
-   cl_ulong started, ended, enqueued;
-   e_time.getProfilingInfo( CL_PROFILING_COMMAND_START, &started );
-   e_time.getProfilingInfo( CL_PROFILING_COMMAND_END, &ended );
-   e_time.getProfilingInfo( CL_PROFILING_COMMAND_QUEUED, &enqueued );
-
-   ++m_kernel_calls;
-
-   m_kernel_time += ended - started;
-   m_launch_time += started - enqueued;
-#endif
-
    // -----------------------------------------------------------------------
    /*
       Each kernel execution will put in m_buf_E the partial errors of each program:
@@ -221,30 +181,14 @@ bool FPI::EvaluatePopulation( cl_uint* pop )
       for( unsigned gr_id = 0; gr_id < num_work_groups; ++gr_id ) 
          m_E[p] += partial_errors[p * num_work_groups + gr_id];
 
-      // -----------------------------------------------------------------------
-
       // Check whether we have found a better solution
-      if( m_E[p] < m_best_error  ||
-            ( util::AlmostEqual( m_E[p], m_best_error ) && 
-              ProgramSize( pop, p ) < ProgramSize( m_best_program ) ) )
-      {
-         m_best_error = m_E[p];
-         Clone( Program( pop, p ), m_best_program );
-
-         std::cout << "\nEvolved: [" << std::setprecision(12) << m_best_error << "]\t{" 
-            << ProgramSize( m_best_program ) << "}\t";
-         PrintProgramPretty( m_best_program );
-         std::cout << "\n--------------------------------------------------------------------------------\n";
-      }
+      UpdateBestProgram( Program( pop, p ), m_E[p] );
    }
 
    // Unmapping
    m_queue.enqueueUnmapMemObject( m_buf_E, partial_errors ); 
 
    // TODO: Pick the best and fill the elitism vector (if any)
-
-   // We should stop the evolution if an error below the specified tolerance is found
-   return (m_best_error <= m_params->m_error_tolerance);
 }
 
 // -----------------------------------------------------------------------------

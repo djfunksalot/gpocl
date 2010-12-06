@@ -122,7 +122,7 @@ public:
                            m_params->m_population_size * (m_global_size / m_local_size) * sizeof(cl_float) );
    }
 
-   bool EvaluatePopulation( cl_uint* pop );
+   void CalculateErrors( const cl_uint* pop );
 };
 
 // -----------------------------------------------------------------------------

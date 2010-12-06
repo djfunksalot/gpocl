@@ -153,6 +153,11 @@ public:
 
 protected:
    virtual void Evolve();
+   /**
+     Check whether 'program' is better than the current best program.
+     If so, update 'm_best_program' and its error.
+    */
+   void UpdateBestProgram( const cl_uint* program, cl_float error );
 
    unsigned MaximumProgramSize() const { return m_params->m_maximum_tree_size + 1; }
    unsigned MaximumTreeSize() const { return m_params->m_maximum_tree_size; }
@@ -203,11 +208,21 @@ protected:
    void SetProgramSize( cl_uint* program, unsigned size ) const { *program = size; }
 
    ///bool EvaluatePopulation( cl_uint* pop, cl_float* errors );
-   virtual bool EvaluatePopulation( cl_uint* pop  );
+   bool EvaluatePopulation( const cl_uint* pop  );
+   /**
+     Transfer the population to be evaluated and then launch the kernel.
+    */
+   bool KernelLaunch( const cl_uint* pop );
+   /**
+     Read from the device the errors, be it partial or complete, and do
+     some aggregation if necessary.
+    */
+   virtual void CalculateErrors( const cl_uint* pop );
+
    void InitializePopulation( cl_uint* pop );
    ///void Breed( cl_uint* old_pop, cl_uint* new_pop, const cl_float* );
    void Breed( cl_uint* old_pop, cl_uint* new_pop );
-   void Clone( cl_uint* program_orig, cl_uint* program_dest ) const;
+   void Clone( const cl_uint* program_orig, cl_uint* program_dest ) const;
    ///unsigned Tournament( const cl_uint* pop, const cl_float* errors ) const;
    unsigned Tournament( const cl_uint* pop ) const;
    void Crossover( const cl_uint* mom, const cl_uint* dad, cl_uint* child ) const;

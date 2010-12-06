@@ -466,7 +466,7 @@ void GP::CopyNodeMutate( const cl_uint* program_orig, cl_uint* program_dest ) co
 #endif
 
 // -----------------------------------------------------------------------------
-void GP::Clone( cl_uint* program_orig, cl_uint* program_dest ) const
+void GP::Clone( const cl_uint* program_orig, cl_uint* program_dest ) const
 {
    assert( program_orig != NULL && program_dest != NULL );
    assert( ProgramSize( program_orig ) <= MaximumTreeSize() );
@@ -478,7 +478,31 @@ void GP::Clone( cl_uint* program_orig, cl_uint* program_dest ) const
 
 // -----------------------------------------------------------------------------
 ///bool GP::EvaluatePopulation( cl_uint* pop, cl_float* errors )
-bool GP::EvaluatePopulation( cl_uint* pop )
+bool GP::EvaluatePopulation( const cl_uint* pop )
+{
+   KernelLaunch( pop );
+
+   CalculateErrors( pop );
+
+   // We should stop the evolution if an error below the specified tolerance is found
+   return (m_best_error <= m_params->m_error_tolerance);
+}
+
+// -----------------------------------------------------------------------------
+void GP::CalculateErrors( const cl_uint* pop )
+{
+   // Read the errors
+   m_queue.enqueueReadBuffer( m_buf_E, CL_TRUE, 0, m_params->m_population_size * 
+                              sizeof(cl_float), m_E, NULL, NULL );
+
+   // --- Error calculation -----------------
+   for( unsigned p = 0; p < m_params->m_population_size; ++p )
+      UpdateBestProgram( Program( pop, p ), m_E[p] );
+      // TODO: Pick the best and fill the elitism vector (if any)
+}
+
+// -----------------------------------------------------------------------------
+bool GP::KernelLaunch( const cl_uint* pop )
 {
    // Write data to buffer (TODO: can we use mapbuffer here?)
    /* 
@@ -489,9 +513,8 @@ bool GP::EvaluatePopulation( cl_uint* pop )
       use efficiently this buffer in the host to access the populations, i.e.,
       does mapbuffer keep a copy (synchronized) in the host?
       */
-   m_queue.enqueueWriteBuffer( m_buf_pop, CL_TRUE, 0, 
-         sizeof( cl_uint ) * ( m_params->m_population_size * MaximumProgramSize() ),
-         pop, NULL, NULL);
+   m_queue.enqueueWriteBuffer( m_buf_pop, CL_TRUE, 0, sizeof( cl_uint ) *
+         ( m_params->m_population_size * MaximumProgramSize() ), pop, NULL, NULL);
 
 #ifdef PROFILING
    cl::Event e_time;
@@ -520,32 +543,24 @@ bool GP::EvaluatePopulation( cl_uint* pop )
    m_kernel_time += ended - started;
    m_launch_time += started - enqueued;
 #endif
+}
 
-   m_queue.enqueueReadBuffer( m_buf_E, CL_TRUE, 0, m_params->m_population_size * 
-                              sizeof(cl_float), m_E, NULL, NULL );
-
-   // --- Fitness calculation -----------------
-
-   for( unsigned i = 0; i < m_params->m_population_size; ++i )
+// -----------------------------------------------------------------------------
+void GP::UpdateBestProgram( const cl_uint* program, cl_float error )
+{
+   if( error < m_best_error  || ( util::AlmostEqual( error, m_best_error ) && 
+                                  ProgramSize( program ) < ProgramSize( m_best_program ) ) )
    {
-      // Check whether we have found a better solution
-      if( m_E[i] < m_best_error  ||
-         ( util::AlmostEqual( m_E[i], m_best_error ) && ProgramSize( pop, i ) < ProgramSize( m_best_program ) ) )
-      {
-         m_best_error = m_E[i];
-         Clone( Program( pop, i ), m_best_program );
+      m_best_error = error; Clone( program, m_best_program );
 
+      if( m_params->m_verbose )
+      {
          std::cout << "\nEvolved: [" << std::setprecision(12) << m_best_error << "]\t{" 
-                   << ProgramSize( m_best_program ) << "}\t";
+            << ProgramSize( m_best_program ) << "}\t";
          PrintProgramPretty( m_best_program );
          std::cout << "\n--------------------------------------------------------------------------------\n";
       }
-      // TODO: Pick the best and fill the elitism vector (if any)
    }
-
-   // We should stop the evolution if an error below the specified tolerance is found
-   return (m_best_error <= m_params->m_error_tolerance);
-   
 }
 
 // -----------------------------------------------------------------------------
