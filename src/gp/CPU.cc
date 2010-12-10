@@ -61,7 +61,9 @@ void GPonCPU::LoadPoints()
    /*
    for( unsigned i = 0; i < m_num_points * m_x_dim; ++i)
       std::cout << m_X[i] << " ";
+   std::cout << std::endl;
    for( unsigned i = 0; i < m_num_points; ++i)
       std::cout << m_Y[i] << " ";
-    */
+   std::cout << std::endl;
+   */
 }

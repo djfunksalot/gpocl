@@ -930,8 +930,6 @@ void GP::CreateLinearTree( cl_uint* node, unsigned size ) const
 // -----------------------------------------------------------------------------
 void GP::LoadPoints( std::vector<std::vector<cl_float> > & out_x )
 {
-   const char separator = ',';
-
    if( m_params->m_data_points.empty() )
       throw Error( "Missing data points filename" );
    
@@ -945,13 +943,44 @@ void GP::LoadPoints( std::vector<std::vector<cl_float> > & out_x )
       throw Error( "[" + m_params->m_data_points[0] + "]: file not found." );
 	}
 
-   unsigned cur_line = 0; std::string line;
-   while( std::getline( points, line ) )
+   // -----
+   unsigned cur_line = 0; 
+   while( points.good() )
    {
       ++cur_line;
 
+      // Ignore (treat as comment) empty lines or lines beginning with one of:
+      //                '%', or '#'
+      switch( points.peek() ) {
+         case '%': case '#': case '\n':
+            points.ignore( std::numeric_limits<std::streamsize>::max(), '\n' );
+            continue;
+      }
+
+      // Found a non-comment line, lets go to the next phase (guessing the field
+      // separator character).
+      break;
+   }
+
+   std::string line; std::getline( points, line );
+   
+   // --- Guessing the field separator char
+   // First discards the leading spaces (if any)
+   std::size_t start = line.find_first_not_of( " \t" );
+
+   start = line.find_first_not_of( "01234567890.+-Ee", start );
+
+   if( start == std::string::npos ) 
+      throw Error( "[" + m_params->m_data_points[0] + ", line " + ToString( cur_line ) 
+                  + "]: could not guess the field separator character." );
+
+   // Guessed field separator is the char at line[start]
+   const char separator = line[start];
+
+   do
+   {
       // Skipping empty lines or lines beginning with '#' or '%'
-      if( line.empty() || line[0] == '#' || line[0] == '%' ) continue;
+      if( line.empty() || line[0] == '#' || line[0] == '%' ) { continue; }
 
       std::stringstream ss( line ); std::string cell; std::vector<cl_float> v;
       while( std::getline( ss, cell, separator ) )
@@ -976,7 +1005,7 @@ void GP::LoadPoints( std::vector<std::vector<cl_float> > & out_x )
          if( v.empty() || m_x_dim != 0 )
             // Ops. We've found a line with a different number of variables!
             throw Error( "[" + m_params->m_data_points[0] + ", line " + ToString( cur_line ) + "]: expected " 
-                         + ToString( m_x_dim + m_y_dim ) + "variables but found " + ToString( v.size() ) );
+                         + ToString( m_x_dim + m_y_dim ) + " variables but found " + ToString( v.size() ) );
          else
             // For the first time, since m_x_dim is currently not set, we must set
             // its value. So, the actual dimension of X (input) is the one found
@@ -993,7 +1022,8 @@ void GP::LoadPoints( std::vector<std::vector<cl_float> > & out_x )
       if( m_Y.back() > m_primitives.m_max_Y && m_Y.back() <= MAX_INT_VALUE ) m_primitives.m_max_Y = m_Y.back();
 
       out_x.push_back( v );
-   }
+
+   } while( ++cur_line, std::getline( points, line ) );
 
    if( out_x.empty() )
       throw Error( "[" + m_params->m_data_points[0] + "]: no data found." );
