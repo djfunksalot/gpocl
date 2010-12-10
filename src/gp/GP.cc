@@ -930,10 +930,10 @@ void GP::CreateLinearTree( cl_uint* node, unsigned size ) const
 // -----------------------------------------------------------------------------
 void GP::LoadPoints( std::vector<std::vector<cl_float> > & out_x )
 {
+   using namespace util;
+
    if( m_params->m_data_points.empty() )
       throw Error( "Missing data points filename" );
-   
-   using namespace util;
 
    // We will consider just the first file name given by the user
    std::ifstream points( m_params->m_data_points[0].c_str() );
@@ -945,13 +945,12 @@ void GP::LoadPoints( std::vector<std::vector<cl_float> > & out_x )
 
    // -----
    unsigned cur_line = 0; 
-   while( points.good() )
+   while( ++cur_line, points.good() )
    {
-      ++cur_line;
-
       // Ignore (treat as comment) empty lines or lines beginning with one of:
       //                '%', or '#'
-      switch( points.peek() ) {
+      switch( points.peek() ) 
+      {
          case '%': case '#': case '\n':
             points.ignore( std::numeric_limits<std::streamsize>::max(), '\n' );
             continue;
@@ -967,7 +966,6 @@ void GP::LoadPoints( std::vector<std::vector<cl_float> > & out_x )
    // --- Guessing the field separator char
    // First discards the leading spaces (if any)
    std::size_t start = line.find_first_not_of( " \t" );
-
    start = line.find_first_not_of( "01234567890.+-Ee", start );
 
    if( start == std::string::npos ) 
@@ -998,20 +996,14 @@ void GP::LoadPoints( std::vector<std::vector<cl_float> > & out_x )
          v.push_back( element );
       }
 
+      // Set the number of expected cols as the number of cells found on the first row
+      static const unsigned cols = v.size(); // only assigned once
+
       // Setting the dimension of the input variables (X) and checking whether
       // there are lines with different number of variables.
-      if( v.size() != m_x_dim + m_y_dim )
-      {
-         if( v.empty() || m_x_dim != 0 )
-            // Ops. We've found a line with a different number of variables!
-            throw Error( "[" + m_params->m_data_points[0] + ", line " + ToString( cur_line ) + "]: expected " 
-                         + ToString( m_x_dim + m_y_dim ) + " variables but found " + ToString( v.size() ) );
-         else
-            // For the first time, since m_x_dim is currently not set, we must set
-            // its value. So, the actual dimension of X (input) is the one found
-            // on the first line.
-            m_x_dim = v.size() - m_y_dim;
-      }
+      if( v.size() != cols )
+         throw Error( "[" + m_params->m_data_points[0] + ", line " + ToString( cur_line ) + "]: expected " 
+                          + ToString( cols ) + " columns but found " + ToString( v.size() ) );
 
       // Here we append directly in m_Y because both CPU and GPU we use it (m_Y) throughout
       // the evolutionary process.
@@ -1027,8 +1019,11 @@ void GP::LoadPoints( std::vector<std::vector<cl_float> > & out_x )
 
    if( out_x.empty() )
       throw Error( "[" + m_params->m_data_points[0] + "]: no data found." );
-
    m_num_points = out_x.size();
+
+   if( out_x[0].empty() )
+      throw Error( "[" + m_params->m_data_points[0] + "]: no enough columns (variables) found." );
+   m_x_dim = out_x[0].size();
 }
 
 // -----------------------------------------------------------------------------
