@@ -37,8 +37,6 @@
 #include "../common/Exception.h"
 #include "../common/util/CmdLineParser.h"
 
-//namespace GPC { // (G)enetic (P)rogramming (C)lassifier
-
 #define GPOCL_VERSION "0.1.0 SVN"
 
 //----------------------------------------------------------------------
@@ -110,6 +108,5 @@ public:
    };
 };
 
-//}
 //----------------------------------------------------------------------
 #endif

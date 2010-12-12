@@ -5,8 +5,6 @@ __kernel void evaluate( __global const uint* pop, __global const float* X,
       __constant 
 #endif
       float* Y, __global float* E )
-//__kernel void evaluate( __global const uint* pop, __global const float* X, __global const float* Y,
- //                       __global float* E )
 {
    uint gl_id = get_global_id( 0 );
 
@@ -18,11 +16,10 @@ __kernel void evaluate( __global const uint* pop, __global const float* X,
 
       // Get the actual program's size
       uint program_size = pop[(MAX_TREE_SIZE + 1) * gl_id];
-      // Make program points to the actual program being evaluated
+      // Make 'program' points to the actual program being evaluated
       __global const uint* program = &pop[(MAX_TREE_SIZE + 1) * gl_id + 1];
 
       float error = 0.0f;
-
       for( uint iter = 0; iter < NUM_POINTS; ++iter )
       {
          // -------------------------------
@@ -44,7 +41,6 @@ __kernel void evaluate( __global const uint* pop, __global const float* X,
          // Avoid further calculations if the current one has overflown the
          // float (i.e., it is inf or NaN).
          if( isinf( error ) || isnan( error ) ) { error = MAX_FLOAT; break; }
-
       }
 
       // Store on the global memory (to be read by the host)

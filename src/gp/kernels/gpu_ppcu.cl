@@ -1,5 +1,3 @@
-//#pragma OPENCL EXTENSION cl_amd_printf : enable
-
 __kernel void evaluate( __global const uint* pop, __global const float* X, 
 #ifdef Y_DOES_NOT_FIT_IN_CONSTANT_BUFFER
       __global const 
@@ -7,8 +5,6 @@ __kernel void evaluate( __global const uint* pop, __global const float* X,
       __constant 
 #endif
       float* Y, __global float* E, __local uint* program )
-//__kernel void evaluate( __global const uint* pop, __global const float* X, __global const float* Y,
-                        //__global float* E, __local uint* program )
 {
    __local float PE[LOCAL_SIZE];
    __local uint program_size;
@@ -71,7 +67,6 @@ __kernel void evaluate( __global const uint* pop, __global const float* X,
 
          // Avoid further calculations if the current one has overflown the float
          // (i.e., it is inf or NaN).
-         //if( isinf( PE[lo_id] ) || isnan( PE[lo_id] ) ) { printf( "\n\n\n\n\nNaN: %d,%d\n\n\n\n\n", gr_id, lo_id); break;}
          if( isinf( PE[lo_id] ) || isnan( PE[lo_id] ) ) break;
 #ifdef NUM_POINTS_IS_NOT_DIVISIBLE_BY_LOCAL_SIZE
       }

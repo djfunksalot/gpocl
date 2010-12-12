@@ -1,5 +1,3 @@
-//#pragma OPENCL EXTENSION cl_amd_printf : enable
-
 __kernel void evaluate( __global const uint* pop, __global const float* X, 
 #ifdef Y_DOES_NOT_FIT_IN_CONSTANT_BUFFER
       __global const 
@@ -14,12 +12,10 @@ __kernel void evaluate( __global const uint* pop, __global const float* X,
 
    // Get the actual program's size
    uint program_size = pop[(MAX_TREE_SIZE + 1) * gr_id];
-   // Make program points to the actual program being evaluated
+   // Make 'program' points to the actual program being evaluated
    __global const uint* program = &pop[(MAX_TREE_SIZE + 1) * gr_id + 1];
 
    float error = 0.0f;
-
-   //printf( "[Genome size: %d]", program_size );
    for( uint iter = 0; iter < NUM_POINTS; ++iter )
    {
       // -------------------------------

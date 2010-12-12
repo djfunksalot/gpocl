@@ -1,0 +1,13 @@
+After having compiled GPOCL (see INSTALL), to run it do:
+
+   ./gpocl -v ../datasets/fibonacci.csv
+
+This will run gpocl using one CPU core. To use more than one core, do:
+
+   ./gpocl -v ../datasets/fibonacci.csv -cpu 6
+
+If you have, for instance, a six-core machine.
+
+To run on the GPU, do:
+
+   ./gpocl -v ../datasets/fibonacci.csv -gpu ppcu

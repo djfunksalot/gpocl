@@ -139,7 +139,6 @@ public:
    void PrintStrategy() const { GPonGPU::PrintStrategy(); std::cout << "FPC"; }
 
    void CalculateNDRanges() {}
-
 };
 
 // -----------------------------------------------------------------------------

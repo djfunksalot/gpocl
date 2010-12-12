@@ -28,7 +28,6 @@
 #include "../common/util/Util.h"
 
 using namespace std;
-//using namespace GPC;
 
 //---------------------------------------------------------------------
 void
@@ -71,11 +70,11 @@ Params::ShowUsage( const char* app = "gpocl" ) const // -h or --help
    << "  -pp, --print-primitives\n"
    << "     Print all available GP primitives\n"
    << "  -g <n>, --generations <n>\n"
-   << "     number of generations, n>0 [default = 1]\n"
+   << "     number of generations, n>0 [default = 1000]\n"
    << "  -s <n>, --seed <n>\n"
    << "     GP initialization seed, n>=0 [default = 0, random]\n"
    << "  -ps <n>, --population-size <n>\n"
-   << "     number of individuals [default = 512]\n"
+   << "     number of individuals [default = 1024]\n"
    << "  -cp <f>, --crossover-probability <f>\n"
    << "     crossover probability, 0.0<=f<=1.0 [default = 0.95]\n"
    << "  -mp <f>, --mutation-probability <f>\n"
@@ -120,16 +119,19 @@ Params::Initialize()
    Opts.String.Add( "-gpu", "--gpu", "ppcu", "fpi", "fpc", "ppcu", "ppce", NULL );
 
    // Termination criteria
-   Opts.Int.Add( "-g", "--generations", 1, 1, numeric_limits<int>::max() );
+   Opts.Int.Add( "-g", "--generations", 1000, 1, numeric_limits<int>::max() );
 
    // Seed options
    Opts.Int.Add( "-s", "--seed", 0, 0, numeric_limits<long>::max() );
 
-   Opts.Int.Add( "-ps", "--population-size", 512, 5, numeric_limits<int>::max() );
+   Opts.Int.Add( "-ps", "--population-size", 1024, 5, numeric_limits<int>::max() );
    Opts.Float.Add( "-cp", "--crossover-probability", 0.95, 0.0, 1.0 );
    Opts.Float.Add( "-mp", "--mutation-probability", 0.10, 0.0, 1.0 );
    Opts.Int.Add( "-sp", "--seletion-pressure", 3, 1, numeric_limits<int>::max() );
-   Opts.Int.Add( "-es", "--elitism-size", 1, 0, numeric_limits<int>::max() );
+
+   // FIXME: Opts.Int.Add( "-es", "--elitism-size", 1, 0, numeric_limits<int>::max() );
+   Opts.Int.Add( "-es", "--elitism-size", 1, 0, 1 );
+
    Opts.Int.Add( "-max", "--maximum-size", 20, 1, numeric_limits<int>::max() );
    Opts.Int.Add( "-min", "--minimum-size", 1, 1, numeric_limits<int>::max() );
 
