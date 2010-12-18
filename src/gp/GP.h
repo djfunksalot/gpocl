@@ -31,17 +31,31 @@
 
 /*
    When defined profiling informations about kernel execution are taken.
-*/
+ */
 #define PROFILING 1
 
-/* Use native functions (hardware implemented) whenever available. */
+/* 
+   Use native functions (hardware implemented) whenever available. 
+ */
 #define FAST_PRIMITIVES 1
 
 ////////////////////////////////////////
 
-#define __CL_ENABLE_EXCEPTIONS
-//TODO: #define CL_DEVICE_FISSION
+/* 
+   Enable the use of device fission in order to restrict the number of CPU
+   cores when specified so. 
+ */
+#define USE_CL_DEVICE_FISSION
 
+/* 
+   Enabling C++ exceptions save the programmer from always checking for errors
+   on the OpenCL side. 
+ */
+#define __CL_ENABLE_EXCEPTIONS
+
+/*
+   Every OpenCL-related define must be declared before its header inclusion.
+ */
 #include <CL/cl.hpp>
 
 #include "Params.h"
@@ -280,6 +294,10 @@ protected:
    // OpenCL related functions
 
    void OpenCLInit();
+
+   virtual unsigned DeviceFission() {
+      return m_device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
+   }
 
    virtual void CreateBuffers();
    void CreateBufferPopulation();

@@ -585,20 +585,20 @@ unsigned GP::Tournament( const cl_uint* pop ) const
 // -----------------------------------------------------------------------------
 void GP::OpenCLInit()
 {
-   // TODO: either (i) use the best device (fastest?) or (ii) use *all* devices!
-   cl_int device_to_use = 0;
-
    std::vector<cl::Platform> platforms;
    cl::Platform::get( &platforms );
 
+   // Pick the first platform. (TODO: Pick the best one for each device)
    cl_context_properties properties[] = 
-   { CL_CONTEXT_PLATFORM, (cl_context_properties)(platforms[0])(), 0 };
+   { CL_CONTEXT_PLATFORM, (cl_context_properties)(platforms.front())(), 0 };
    m_context = cl::Context( m_device_type, properties );
 
-   //std::vector<cl::Device> devices;
-   m_device = m_context.getInfo<CL_CONTEXT_DEVICES>()[device_to_use];
+   // Pick the first device (TODO: Pick the best one or all of them)
+   m_device = m_context.getInfo<CL_CONTEXT_DEVICES>().front();
 
-   m_max_cu = m_device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
+   // Change m_device properties (number of cores) if necessary (CPU only);
+   // also, return the actual number of compute units
+   m_max_cu = DeviceFission();
 
    m_max_local_size = std::min( m_device.getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>(),
                                 m_device.getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>()[0] );
@@ -608,7 +608,7 @@ void GP::OpenCLInit()
    if( m_params->m_max_local_size > 0 && m_params->m_max_local_size < m_max_local_size )
       m_max_local_size = m_params->m_max_local_size;
 
-   std::cout << "\nCompute units: " << m_max_cu << " Local size: " << m_max_local_size <<  std::endl;
+   std::cout << "\nCompute units: " << m_max_cu << ", Local size: " << m_max_local_size <<  std::endl;
 
    // Check whether our Y array (expected values) cannot be stored in the
    // __constant address space

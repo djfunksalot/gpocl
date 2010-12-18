@@ -47,6 +47,8 @@ public:
    virtual ~GPonCPU() {}
 
    void LoadPoints();
+
+   unsigned DeviceFission();
 };
 
 

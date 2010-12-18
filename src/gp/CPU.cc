@@ -29,18 +29,38 @@
 // -----------------------------------------------------------------------------
 GPonCPU::GPonCPU( Params& p ): GP( p, CL_DEVICE_TYPE_CPU )
 {
-   // FIXME: (AMD only!) Use the more portable Fission (from cl_ext.h) instead!
-   if( m_params->m_cpu_cores > 0 )
-   {
-      /* FIXME: putenv should accept const char* as argument!
-      const std::string env = "CPU_MAX_COMPUTE_UNITS=" + util::ToString( m_params->m_cpu_cores );
-      putenv( env.c_str() );
-      */
-      setenv( "CPU_MAX_COMPUTE_UNITS", util::ToString( m_params->m_cpu_cores ).c_str(), 1 );
-   }
-
    LoadKernel( "kernels/common.cl" );
    LoadKernel( "kernels/cpu.cl" );
+}
+
+// -----------------------------------------------------------------------------
+unsigned GPonCPU::DeviceFission()
+{
+   // Use the default procedure if the user doesn't want to restrict the number of cores to use
+   if( m_params->m_cpu_cores == 0 ) 
+      return GP::DeviceFission();
+
+
+   // 1) Check for the existence of the 'cl_ext_device_fission' extension; if not, 
+   //    fall back to the default procedure
+   if( m_device.getInfo<CL_DEVICE_EXTENSIONS>().find( "cl_ext_device_fission" ) == std::string::npos )
+      return GP::DeviceFission();
+
+   // 2) Set the way we want to subdivide the device by creating a list of properties
+   size_t cu = std::min( (unsigned) m_params->m_cpu_cores, 
+                         (unsigned) m_device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>() );
+
+   cl_device_partition_property_ext subdevice_properties[] =
+        { CL_DEVICE_PARTITION_BY_COUNTS_EXT, cu, CL_PARTITION_BY_COUNTS_LIST_END_EXT, 
+          CL_PROPERTIES_LIST_END_EXT };
+
+   // 3) Create a sub device containing the specified number of processors the user wants
+   std::vector<cl::Device> subdevices;
+   m_device.createSubDevices( subdevice_properties, &subdevices );
+
+   // 4) Finally, set m_device to be the newly created device (subdevices) and
+   //    return the actual number of compute units
+   return m_device = subdevices.front(), cu;
 }
 
 // -----------------------------------------------------------------------------
