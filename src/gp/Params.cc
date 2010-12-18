@@ -158,7 +158,7 @@ Params::Initialize()
    } 
    else
    {
-      if( Opts.Bool.Get( "-cpu" ) ) 
+      if( Opts.Bool.Get( "-cpu" ) || !Opts.Int.Found( "-cpu" ) ) 
          m_cpu_cores = 0;
       else 
          m_cpu_cores = Opts.Int.Get( "-cpu" );
