@@ -590,7 +590,7 @@ protected:
     * returns @c false indicating that this duplicate declaration is to be
     * ignored.
     */
-   bool CheckDuplicate( const Option<T>* p, const std::string opt ) const
+   bool CheckDuplicate( const Option<T>* p, const std::string& opt ) const
    {
       if( p->m_found ) // already declared before?
       {

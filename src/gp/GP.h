@@ -90,8 +90,8 @@ public:
    GP( Params& p, cl_device_type );
    virtual ~GP() 
    { 
-      if( m_X ) delete[] m_X;
-      if( m_E ) delete[] m_E;
+      delete[] m_X;
+      delete[] m_E;
       delete[] m_best_program;
    }
 
