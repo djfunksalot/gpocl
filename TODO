@@ -19,3 +19,6 @@
 - Negative ephemeral constants
 
 - Check if the 'bit shifting' operations are imposing some considerable overhead.
+
+- Check the use of the flag CL_DEVICE_TYPE_DEFAULT ("use the GPU device if
+  possible, otherwise revert to the CPU") when no device is explicitly given.
