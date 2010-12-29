@@ -5,7 +5,7 @@
 // 
 //   Genetic Programming in OpenCL (gpocl)
 //
-//   Copyright (C) 2010-2010 Douglas A. Augusto
+//   Copyright (C) 2010-2011 Douglas A. Augusto
 // 
 // This file is part of gpocl
 // 
@@ -77,7 +77,7 @@ void GP::Evolve()
    3: for generation ← 1 to NG do
       4: Copy the best (elitism) individuals of P to the temporary population Ptmp
       5: while |Ptmp| < |P| do
-         6: Select and copy from P two fit individuals, p1 e p2
+         6: Select and copy from P two fit individuals, p1 and p2
          7: if [probabilistically] crossover then
             8: Recombine p1 and p2, creating the children p1' and p2'
             9: p1 ← p1' ; p2 ← p2'

@@ -5,7 +5,7 @@
 // 
 //   Genetic Programming in OpenCL (gpocl)
 //
-//   Copyright (C) 2010-2010 Douglas A. Augusto
+//   Copyright (C) 2010-2011 Douglas A. Augusto
 // 
 // This file is part of gpocl
 // 
@@ -35,7 +35,7 @@ Params::ShowVersion() const // --version
 {
    cout
 
-   << "gpocl (GP in OpenCL) " << GPOCL_VERSION << " Copyright (C) 2010-2010\n"
+   << "gpocl (GP in OpenCL) " << GPOCL_VERSION << " Copyright (C) 2010-2011\n"
    << "\n"
    << "This is free software. You may redistribute copies of it under the terms\n"
    << "of the GNU General Public License <http://www.gnu.org/licenses/gpl.html>.\n"
