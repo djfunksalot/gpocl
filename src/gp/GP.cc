@@ -586,15 +586,22 @@ unsigned GP::Tournament( const cl_uint* pop ) const
 void GP::OpenCLInit()
 {
    std::vector<cl::Platform> platforms;
+   std::vector<cl::Device> devices;
+
+   /* Iterate over the available platforms and pick the list of compatible devices
+      from the first platform that offers the device type we are querying. */
    cl::Platform::get( &platforms );
+   for( int i = 0; i < platforms.size() && devices.empty(); i++ )
+      try {
+         platforms[i].getDevices( m_device_type, &devices );
+      } catch( cl::Error ) { }
 
-   // Pick the first platform. (TODO: Pick the best one for each device)
-   cl_context_properties properties[] = 
-   { CL_CONTEXT_PLATFORM, (cl_context_properties)(platforms.front())(), 0 };
-   m_context = cl::Context( m_device_type, properties );
+   if( devices.empty() )
+      throw Error( "Not a single compatible device found." );
 
-   // Pick the first device (TODO: Pick the best one or all of them)
-   m_device = m_context.getInfo<CL_CONTEXT_DEVICES>().front();
+   // TODO: Pick the best device from *all* platforms
+   m_device = devices.front();
+   m_context = cl::Context( devices );
 
    // Change m_device properties (number of cores) if necessary (CPU only);
    // also, return the actual number of compute units
@@ -608,7 +615,8 @@ void GP::OpenCLInit()
    if( m_params->m_max_local_size > 0 && m_params->m_max_local_size < m_max_local_size )
       m_max_local_size = m_params->m_max_local_size;
 
-   std::cout << "\nCompute units: " << m_max_cu << ", Local size: " << m_max_local_size <<  std::endl;
+   std::cout << "\nDevice: " << m_device.getInfo<CL_DEVICE_NAME>() << 
+     ", Compute units: " << m_max_cu << ", Local size: " << m_max_local_size <<  std::endl;
 
    // Check whether our Y array (expected values) cannot be stored in the
    // __constant address space
