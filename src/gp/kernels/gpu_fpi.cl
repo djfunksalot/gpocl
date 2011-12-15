@@ -1,3 +1,5 @@
+#define ASYNC_WG_COPY
+
 __kernel void evaluate( __global const uint* pop, __global const float* X, 
 #ifdef Y_DOES_NOT_FIT_IN_CONSTANT_BUFFER
       __global const 
@@ -21,6 +23,15 @@ __kernel void evaluate( __global const uint* pop, __global const float* X,
 
       barrier(CLK_LOCAL_MEM_FENCE);
 
+#ifdef ASYNC_WG_COPY
+   // Automatically managed copy from 'global' to 'local' memory
+   event_t e_copy = async_work_group_copy( program, 
+                    (__global  uint*)(pop + (MAX_TREE_SIZE + 1) * p + 1),
+                    program_size, 0 );
+   wait_group_events( 1, &e_copy );
+
+#else // Manually managed copy from 'global' to 'local' memory
+
 #ifndef PROGRAM_TREE_DOES_NOT_FIT_IN_LOCAL_SIZE
       if( lo_id < program_size ) program[lo_id] = pop[(MAX_TREE_SIZE + 1) * p + lo_id + 1];
 #else   
@@ -35,6 +46,8 @@ __kernel void evaluate( __global const uint* pop, __global const float* X,
 #endif
 
       barrier(CLK_LOCAL_MEM_FENCE);
+
+#endif // ASYNC_WG_COPY
 
       PE[lo_id] = 0.0f;
 
