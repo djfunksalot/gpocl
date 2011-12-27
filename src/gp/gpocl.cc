@@ -62,8 +62,8 @@ int main( int argc, char** argv )
             case Params::DEVICE_GPU_PPCU:
                gp_engine = new PPCU( parameters );
                break;
-            case Params::DEVICE_GPU_PPCE:
-               gp_engine = new PPCE( parameters );
+            case Params::DEVICE_GPU_PPPE:
+               gp_engine = new PPPE( parameters );
                break;
          }
 

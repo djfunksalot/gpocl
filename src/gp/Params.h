@@ -37,7 +37,7 @@
 #include "../common/Exception.h"
 #include "../common/util/CmdLineParser.h"
 
-#define GPOCL_VERSION "0.1.0 SVN"
+#define GPOCL_VERSION "0.1.0"
 
 //----------------------------------------------------------------------
 /** @class Params
@@ -71,7 +71,7 @@ public:
    char** m_argv;
 
 public:
-   enum { DEVICE_CPU, DEVICE_GPU_FPI, DEVICE_GPU_FPC, DEVICE_GPU_PPCU, DEVICE_GPU_PPCE };
+   enum { DEVICE_CPU, DEVICE_GPU_FPI, DEVICE_GPU_FPC, DEVICE_GPU_PPCU, DEVICE_GPU_PPPE };
 
    // General options.
    bool m_verbose; /**< switch to verbose mode. */

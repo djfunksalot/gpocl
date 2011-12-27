@@ -105,7 +105,7 @@ void PPCU::CalculateNDRanges()
 }
 
 // -----------------------------------------------------------------------------
-void PPCE::CalculateNDRanges() 
+void PPPE::CalculateNDRanges() 
 {
    // Evenly distribute the workload among the compute units (but avoiding local size
    // being more than the maximum allowed.

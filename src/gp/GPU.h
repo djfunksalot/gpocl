@@ -72,17 +72,17 @@ public:
 };
 
 // -----------------------------------------------------------------------------
-class PPCE: public GPonGPU {
+class PPPE: public GPonGPU {
 public:
-   PPCE( Params& p ): GPonGPU( p )
+   PPPE( Params& p ): GPonGPU( p )
    {
-      std::cout << "Strategy 'population-parallel compute element'\n";
-      LoadKernel( "kernels/gpu_ppce.cl" );
+      std::cout << "Strategy 'population-parallel processing element'\n";
+      LoadKernel( "kernels/gpu_pppe.cl" );
    }
 
-   virtual ~PPCE() {}
+   virtual ~PPPE() {}
 
-   void PrintStrategy() const { GPonGPU::PrintStrategy(); std::cout << "PPCE"; }
+   void PrintStrategy() const { GPonGPU::PrintStrategy(); std::cout << "PPPE"; }
 
    void CalculateNDRanges();
 };

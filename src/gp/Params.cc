@@ -52,11 +52,12 @@ Params::ShowUsage( const char* app = "gpocl" ) const // -h or --help
 
    << "Genetic Programming in OpenCL (GPOCL)\n"
    << "\n"
-   << "Usage: " << app << " [-cpu [n] | -gpu <fpi|fpc|ppcu|ppce>] [OPTION] <data points>\n"
+   //<< "Usage: " << app << " [-cpu [n] | -gpu <fpi|fpc|ppcu|pppe>] [OPTION] <data points>\n"
+   << "Usage: " << app << " [-cpu [n] | -gpu <fpi|ppcu|pppe>] [OPTION] <data points>\n"
    << "\n"    
    << "General options:\n"
-   << "  -o file, --output-file file\n"
-   << "     save result in 'file' [default = gpocl.out]\n"
+   //<< "  -o file, --output-file file\n"
+   //<< "     save result in 'file' [default = gpocl.out]\n"
    << "  -v, --verbose\n"
    << "     verbose\n"
    << "  --version\n"
@@ -81,8 +82,10 @@ Params::ShowUsage( const char* app = "gpocl" ) const // -h or --help
    << "     mutation probability, 0.0<=f<=1.0 [default = 0.10]\n"
    << "  -sp <n>, --seletion-pressure <n>\n"
    << "     selection pressure (tournament size), n>=1 [default = 3]\n"
+   //<< "  -es <n>, --elitism-size <n>\n"
+  // << "     elitism size [default = 1]\n"
    << "  -es <n>, --elitism-size <n>\n"
-   << "     elitism size [default = 1]\n"
+   << "     elitism size, 0<=n<=1 [default = 1]\n"
    << "  -max <n>, --maximum-size <n>\n"
    << "     maximum program size [default = 20]\n"
    << "  -min <n>, --minimum-size <n>\n"
@@ -116,7 +119,7 @@ Params::Initialize()
 
    Opts.Bool.Add( "-cpu", "--cpu" );
    Opts.Int.Add( "-cpu", "--cpu", 1, 1, numeric_limits<int>::max() ).UnSet( CmdLine::NO_VALUE );
-   Opts.String.Add( "-gpu", "--gpu", "ppcu", "fpi", "fpc", "ppcu", "ppce", NULL );
+   Opts.String.Add( "-gpu", "--gpu", "ppcu", "fpi", "fpc", "ppcu", "pppe", NULL );
 
    // Termination criteria
    Opts.Int.Add( "-g", "--generations", 1000, 1, numeric_limits<int>::max() );
@@ -153,8 +156,8 @@ Params::Initialize()
          m_device = DEVICE_GPU_FPC;
       else if( gpu_strategy == "ppcu" ) // Population-parallel computing unit
          m_device = DEVICE_GPU_PPCU;
-      else if( gpu_strategy == "ppce" ) // Population-parallel computing element
-         m_device = DEVICE_GPU_PPCE;
+      else if( gpu_strategy == "pppe" ) // Population-parallel computing element
+         m_device = DEVICE_GPU_PPPE;
    } 
    else
    {
