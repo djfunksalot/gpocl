@@ -94,6 +94,8 @@ Params::ShowUsage( const char* app = "gpocl" ) const // -h or --help
    << "     tolerance of error (stop criterion) [default = none]\n"
    << "\n"
    << "OpenCL options:\n"
+   << "  -cl-p <n>, --cl-platform-id <n>\n"
+   << "  -cl-d <n>, --cl-device-id <n>\n"
    << "  -cl-mls <n>, --cl-maximum-local-size <n>\n";
 }
 
@@ -141,6 +143,9 @@ Params::Initialize()
    Opts.Float.Add( "-et", "--error-tolerance", -1.0, 0.0 );
 
    Opts.Int.Add( "-cl-mls", "--cl-maximum-local-size", 0, 1 );
+   Opts.Int.Add( "-cl-p", "--cl-platform-id", -1, 0 );
+   Opts.Int.Add( "-cl-d", "--cl-device-id", -1 , 0 );
+
    // -- Get the options! ----------------
    /* Right now, the 'Opts' object will process the command-line, i.e.,
     * it will try to recognize the options and their respective arguments. */
@@ -210,6 +215,8 @@ Params::Initialize()
 
    // ---- OpenCL ------------------------------------------
    m_max_local_size = Opts.Int.Get( "-cl-mls" );
+   m_cl_platform_id = Opts.Int.Get( "-cl-p" );
+   m_cl_device_id = Opts.Int.Get( "-cl-d" );
 
    // ---------------
    return true;

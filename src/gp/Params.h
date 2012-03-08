@@ -94,6 +94,8 @@ public:
    float m_crossover_probability; /**< Crossover probability */
    float m_mutation_probability; /**< Mutation probability */
    float m_error_tolerance; /**< Error tolerance (stop criterion) */
+   int m_cl_platform_id; /**< Platform ID */
+   int m_cl_device_id; /**< Device ID */
 
    std::string m_output_file; /**< output filename. */
 

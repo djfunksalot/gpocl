@@ -591,16 +591,40 @@ void GP::OpenCLInit()
    /* Iterate over the available platforms and pick the list of compatible devices
       from the first platform that offers the device type we are querying. */
    cl::Platform::get( &platforms );
-   for( int i = 0; i < platforms.size() && devices.empty(); i++ )
+
+   if( m_params->m_cl_platform_id >= 0 ) // Check if the user has specified a platform
+   {
+      if( m_params->m_cl_platform_id >= platforms.size() )
+         throw Error( "Valid platform range: [0, " + util::ToString( platforms.size() - 1 ) + "]." );
+
       try {
-         platforms[i].getDevices( m_device_type, &devices );
+         platforms[m_params->m_cl_platform_id].getDevices( m_device_type, &devices );
       } catch( cl::Error ) { }
+   }
+   else // Just pick the first platform that provides m_device_type
+   {
+      for( int i = 0; i < platforms.size() && devices.empty(); i++ )
+         try {
+            platforms[i].getDevices( m_device_type, &devices );
+         } catch( cl::Error ) { }
+   }
 
    if( devices.empty() )
       throw Error( "Not a single compatible device found." );
 
-   // TODO: Pick the best device from *all* platforms
-   m_device = devices.front();
+   if( m_params->m_cl_device_id >= 0 ) // Check if the user has specified a device_id
+   {
+      if( m_params->m_cl_device_id >= devices.size() )
+         throw Error( "Valid device range: [0, " + util::ToString( devices.size() - 1 ) + "]." );
+
+      m_device = devices[m_params->m_cl_device_id];
+   }
+   else
+   {
+      // TODO: Pick the best device from *all* platforms
+      m_device = devices.front();
+   }
+
    m_context = cl::Context( devices );
 
    // Change m_device properties (number of cores) if necessary (CPU only);
