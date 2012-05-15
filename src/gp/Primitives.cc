@@ -60,6 +60,9 @@ Primitives::Primitives(): m_need_identity( false ),
 #else
    Register( 2, "div",          "/",            "(ARG(1) == 0.0f ? 1.0f : ARG(0)/ARG(1))", "(ARG(1) == 0.0f ? 1.0f : native_divide( ARG(0), ARG(1) ) )"  );
 #endif
+   // Analytic Quotient ("The Use of an Analytic Quotient Operator in Genetic Programming"):
+   Register( 2, "aq",           "aq",           "ARG(0)/sqrt(1.0f + ARG(1)*ARG(1))", "native_divide(ARG(0), native_sqrt(1.0f + ARG(1)*ARG(1)))"  );
+
    Register( 2, "equal",        "=",            "ARG(0) == ARG(1)" );
    Register( 2, "mod",          "%",            "fmod(ARG(0), ARG(1))" );
    Register( 2, "greater",      ">",            "ARG(0) > ARG(1)" );
