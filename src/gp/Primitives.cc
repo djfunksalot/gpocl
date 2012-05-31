@@ -116,9 +116,9 @@ Primitives::Primitives(): m_need_identity( false ),
    Register( 1, "gamma",        "gamma",        "pow((ARG(0)/2.71828174591064f)*sqrt(ARG(0)*sinh(1/ARG(0))),ARG(0))*sqrt(2*3.14159274101257f/ARG(0))" );
    Register( 1, "gauss",        "gauss",        "exp(-ARG(0)*ARG(0))", "native_exp(-ARG(0)*ARG(0))" );
 
-   Register( 0, "c_-1",         "-1",           "-1.0f" );
-   Register( 0, "c_-2",         "-2",           "-2.0f" );
-   Register( 0, "c_-3",         "-3",           "-3.0f" );
+   Register( 0, "c_m1",         "-1",           "-1.0f" );
+   Register( 0, "c_m2",         "-2",           "-2.0f" );
+   Register( 0, "c_m3",         "-3",           "-3.0f" );
    Register( 0, "c_0",          "0",            "0.0f" );
    Register( 0, "c_1",          "1",            "1.0f" );
    Register( 0, "c_1_pi",       "0.3183",       "0.31830987334251f" );
