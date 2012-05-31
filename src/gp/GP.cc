@@ -897,7 +897,7 @@ void GP::PrintNode( const cl_uint* node ) const
    switch( INDEX( *node ) )
    {
       case Primitives::GPT_VAR:
-         std::cout << "X" << AS_INT( *node ) << "";
+         std::cout << "X[" << AS_INT( *node ) << "]";
          break;
       case Primitives::GPT_EPHEMERAL:
          std::cout << AS_FLOAT( *node ) << "";
