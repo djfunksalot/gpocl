@@ -36,6 +36,7 @@
 #include <iomanip>
 #include <ctime>
 
+
 Params* GP::m_params = 0;
 
 // -----------------------------------------------------------------------------
@@ -52,17 +53,21 @@ GP::GP( Params& p, cl_device_type device_type ): m_device_type( device_type ),
                                                  m_kernel_calls( 0 ),
                                                  m_node_evaluations( 0 ),
 #endif
-                                                 m_best_error( std::numeric_limits<cl_float>::max() )
+                                                 m_best_error( std::numeric_limits<cl_float>::max() ),
+                                                 m_normal_dist(0, 100) // mean and sigma
 {
    m_params = &p;
 
-   // Random seed
-   Random::Seed( (p.m_seed == 0 ? time( NULL ) : p.m_seed) );
+   // Random seeds
+   unsigned seed = p.m_seed == 0 ? time( NULL ) : p.m_seed;
+   Random::Seed( seed );
+   m_engine.seed( seed ); // 
 
    // Create room for the best individual so far
    m_best_program = new cl_uint[MaximumProgramSize()];
    // Set its size as zero
    SetProgramSize( m_best_program, 0 );
+
 }
 
 // -----------------------------------------------------------------------------
@@ -178,11 +183,11 @@ void GP::Breed( cl_uint* old_pop, cl_uint* new_pop )
       // Genetic operations
       if( Random::Probability( m_params->m_crossover_probability ) )
          // Respectively: mom, dad, and child
-         Crossover( Program( old_pop, Tournament( old_pop ) ),
-                    Program( old_pop, Tournament( old_pop ) ),
+         Crossover( Program( old_pop, Tournament( old_pop, i ) ),
+                    Program( old_pop, Tournament( old_pop, i ) ),
                     Program( new_pop, i ) );
       else
-         Clone( Program( old_pop, Tournament( old_pop ) ), Program( new_pop, i ) );
+         Clone( Program( old_pop, Tournament( old_pop, i ) ), Program( new_pop, i ) );
 
       // Every genetic operator have a chance to go wrong
       if( Random::Probability( m_params->m_mutation_probability ) )
@@ -564,13 +569,21 @@ void GP::UpdateBestProgram( const cl_uint* program, cl_float error )
 }
 
 // -----------------------------------------------------------------------------
-///unsigned GP::Tournament( const cl_uint* pop, const cl_float* errors ) const
-unsigned GP::Tournament( const cl_uint* pop ) const
+unsigned GP::Tournament( const cl_uint* pop, cl_int center )
 {
-   unsigned winner = Random::Int( 0, m_params->m_population_size - 1 );
+   /* Normal tournament: the candidates are randomly picked based on a normal
+      distribution centered around 'center'. This restricts the mating to the
+      neighborhood of 'center', something like "cellular GP".
+   */
+   unsigned winner = std::min( m_params->m_population_size - 1, std::max( 0, center + RndNormal<cl_int>() ) );
    for( unsigned t = 1; t < m_params->m_tournament_size; ++t ) 
    {
-      unsigned competitor = Random::Int( 0, m_params->m_population_size - 1 );
+      unsigned competitor;
+      do { 
+         competitor = std::min( m_params->m_population_size - 1, std::max( 0, center + RndNormal<cl_int>() ) ); 
+      } while( competitor == winner ); // TODO: check how many loops it is
+                                       // performing here to satisfy the conditions.
+
       if( m_E[competitor] < m_E[winner]
             || ( util::AlmostEqual( m_E[competitor], m_E[winner] ) &&
                ProgramSize( pop, competitor ) < ProgramSize( pop, winner ) ) )
@@ -580,6 +593,28 @@ unsigned GP::Tournament( const cl_uint* pop ) const
    }
 
    return winner;
+
+#if 0
+   const cl_int radius = 1024;
+   const cl_int low = std::max( 0, center - radius );
+   const cl_int high = std::min( m_params->m_population_size - 1, center + radius ); 
+
+   unsigned winner = Random::Int( low, high );
+   for( unsigned t = 1; t < m_params->m_tournament_size; ++t ) 
+   {
+      unsigned competitor;
+      do { competitor = Random::Int( low, high ); } while( competitor == winner );
+      if( m_E[competitor] < m_E[winner]
+            || ( util::AlmostEqual( m_E[competitor], m_E[winner] ) &&
+               ProgramSize( pop, competitor ) < ProgramSize( pop, winner ) ) )
+      {
+         winner = competitor;
+      }
+   }
+
+   return winner;
+#endif
+
 }
 
 // -----------------------------------------------------------------------------

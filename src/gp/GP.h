@@ -70,6 +70,10 @@
 #include <iostream>
 #include <vector>
 #include <cassert>
+#include <tr1/random>
+
+typedef std::tr1::ranlux64_base_01 RND_ENGINE; 
+typedef std::tr1::normal_distribution<double> RND_NORMAL_DIST; 
 
 /*
 Definitions:
@@ -89,6 +93,16 @@ Definitions:
 
 // -----------------------------------------------------------------------------
 class GP {
+public:
+   template<class T> T RndNormal()
+   { 
+      return static_cast<T>( m_normal_dist( m_engine ) );
+   }
+
+protected:
+   RND_ENGINE m_engine;
+   RND_NORMAL_DIST m_normal_dist;
+
 public:
    /**
     * @class Error
@@ -239,7 +253,7 @@ protected:
    void Breed( cl_uint* old_pop, cl_uint* new_pop );
    void Clone( const cl_uint* program_orig, cl_uint* program_dest ) const;
    ///unsigned Tournament( const cl_uint* pop, const cl_float* errors ) const;
-   unsigned Tournament( const cl_uint* pop ) const;
+   unsigned Tournament( const cl_uint* pop, cl_int center );
    void Crossover( const cl_uint* mom, const cl_uint* dad, cl_uint* child ) const;
 #if 0
    /**
