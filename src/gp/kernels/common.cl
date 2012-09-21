@@ -3,6 +3,10 @@
 // -----------------------------------------------------------------------------
 // absolute difference
 #define ERROR_METRIC( actual, expected ) fabs( actual - expected )
+
+// Accuracy (data classification)
+//#define ERROR_METRIC( actual, expected ) ( actual != expected )
+
 // square of the difference
 //#define ERROR_METRIC( actual, expected ) pown( actual - expected, 2 )
 // -----------------------------------------------------------------------------

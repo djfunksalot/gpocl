@@ -54,7 +54,7 @@ public:
                                      m_device( DEVICE_CPU ),
                                      m_cpu_cores( 0 ) {}
    /**
-    * Print gpclassifier version and exit
+    * Print gpocl version and exit
     */
    void ShowVersion() const;
    /**
@@ -62,7 +62,7 @@ public:
     */
    void ShowUsage( const char* ) const;
    /**
-    * Set gpclassifier options from user args.
+    * Set gpocl options from user args.
     */
    bool Initialize();
 
@@ -94,6 +94,8 @@ public:
    float m_crossover_probability; /**< Crossover probability */
    float m_mutation_probability; /**< Mutation probability */
    float m_error_tolerance; /**< Error tolerance (stop criterion) */
+   unsigned m_number_of_cells; /**< Number of cells (neighborhoods) */
+   float m_interaction_probability; /**< Probability of interaction between cells */
    int m_cl_platform_id; /**< Platform ID */
    int m_cl_device_id; /**< Device ID */
 

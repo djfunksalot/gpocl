@@ -53,15 +53,13 @@ GP::GP( Params& p, cl_device_type device_type ): m_device_type( device_type ),
                                                  m_kernel_calls( 0 ),
                                                  m_node_evaluations( 0 ),
 #endif
-                                                 m_best_error( std::numeric_limits<cl_float>::max() ),
-                                                 m_normal_dist(0, 100) // mean and sigma
+                                                 m_best_error( std::numeric_limits<cl_float>::max() )
 {
    m_params = &p;
 
    // Random seeds
    unsigned seed = p.m_seed == 0 ? time( NULL ) : p.m_seed;
    Random::Seed( seed );
-   m_engine.seed( seed ); // 
 
    // Create room for the best individual so far
    m_best_program = new cl_uint[MaximumProgramSize()];
@@ -569,20 +567,47 @@ void GP::UpdateBestProgram( const cl_uint* program, cl_float error )
 }
 
 // -----------------------------------------------------------------------------
-unsigned GP::Tournament( const cl_uint* pop, cl_int center )
+unsigned GP::Tournament( const cl_uint* pop, cl_int ind )
 {
-   /* Normal tournament: the candidates are randomly picked based on a normal
-      distribution centered around 'center'. This restricts the mating to the
-      neighborhood of 'center', something like "cellular GP".
+   /* When nc > 1 and ip > 0.0, the tournament may pick competitors from the
+    whole population, possibly from another cell (not only neighbor cells).
+    The goal is to preserve the diversity within each cell but to allow them
+    to occasionally cooperate by importing competitors.
+    
+    When ip is set to a low probability, most of the time the competition will
+    be restricted to candidates within the cell. */
+
+   const int cell_size = m_params->m_population_size / m_params->m_number_of_cells; 
+   double center = (ind / cell_size) * cell_size + cell_size/2.0;
+
+   /*
+      Suppose ind = 6, ps = 10, and cell size = 5. Then:
+
+                 ind +--- center
+                  v  v
+      0 1 2 3 4 5 6 7 8 9
+                |_______| <- ind's cell
+                cell size
+
+
+        
+   // TODO: Is it worth allowing the first competitor to come from another cell?
+   /*unsigned winner;
+   if( Random::Probability( m_params->m_interaction_probability ) )
+      winner = Random::Int( 0, m_params->m_population_size - 1 );
+   else
+      winner = Random::Int( center - cell_size/2.0, center + cell_size/2.0 - 1 );
    */
-   unsigned winner = std::min( m_params->m_population_size - 1, std::max( 0, center + RndNormal<cl_int>() ) );
+   unsigned winner = Random::Int( center - cell_size/2.0, center + cell_size/2.0 - 1 );
+
    for( unsigned t = 1; t < m_params->m_tournament_size; ++t ) 
    {
       unsigned competitor;
-      do { 
-         competitor = std::min( m_params->m_population_size - 1, std::max( 0, center + RndNormal<cl_int>() ) ); 
-      } while( competitor == winner ); // TODO: check how many loops it is
-                                       // performing here to satisfy the conditions.
+
+      if( Random::Probability( m_params->m_interaction_probability ) )
+         competitor = Random::Int( 0, m_params->m_population_size - 1 );
+      else
+         competitor = Random::Int( center - cell_size/2.0, center + cell_size/2.0 - 1 );
 
       if( m_E[competitor] < m_E[winner]
             || ( util::AlmostEqual( m_E[competitor], m_E[winner] ) &&
@@ -593,28 +618,6 @@ unsigned GP::Tournament( const cl_uint* pop, cl_int center )
    }
 
    return winner;
-
-#if 0
-   const cl_int radius = 1024;
-   const cl_int low = std::max( 0, center - radius );
-   const cl_int high = std::min( m_params->m_population_size - 1, center + radius ); 
-
-   unsigned winner = Random::Int( low, high );
-   for( unsigned t = 1; t < m_params->m_tournament_size; ++t ) 
-   {
-      unsigned competitor;
-      do { competitor = Random::Int( low, high ); } while( competitor == winner );
-      if( m_E[competitor] < m_E[winner]
-            || ( util::AlmostEqual( m_E[competitor], m_E[winner] ) &&
-               ProgramSize( pop, competitor ) < ProgramSize( pop, winner ) ) )
-      {
-         winner = competitor;
-      }
-   }
-
-   return winner;
-#endif
-
 }
 
 // -----------------------------------------------------------------------------

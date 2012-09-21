@@ -35,7 +35,7 @@ Params::ShowVersion() const // --version
 {
    cout
 
-   << "gpocl (GP in OpenCL) " << GPOCL_VERSION << " Copyright (C) 2010-2011\n"
+   << "gpocl (GP in OpenCL) " << GPOCL_VERSION << " Copyright (C) 2010-2012\n"
    << "\n"
    << "This is free software. You may redistribute copies of it under the terms\n"
    << "of the GNU General Public License <http://www.gnu.org/licenses/gpl.html>.\n"
@@ -80,7 +80,7 @@ Params::ShowUsage( const char* app = "gpocl" ) const // -h or --help
    << "     crossover probability, 0.0<=f<=1.0 [default = 0.95]\n"
    << "  -mp <f>, --mutation-probability <f>\n"
    << "     mutation probability, 0.0<=f<=1.0 [default = 0.10]\n"
-   << "  -sp <n>, --seletion-pressure <n>\n"
+   << "  -sp <n>, --selection-pressure <n>\n"
    << "     selection pressure (tournament size), n>=1 [default = 3]\n"
    //<< "  -es <n>, --elitism-size <n>\n"
   // << "     elitism size [default = 1]\n"
@@ -92,6 +92,10 @@ Params::ShowUsage( const char* app = "gpocl" ) const // -h or --help
    << "     minimum program size [default = 1]\n"
    << "  -et <n>, --error-tolerance <f>\n"
    << "     tolerance of error (stop criterion) [default = none]\n"
+   << "  -nc <n>, --number-of-cells <n>\n"
+   << "     number of cells (neighborhoods, unidimensional), 1<=n<=ps [default = 1]\n"
+   << "  -ip <f>, --interaction-probability <f>\n"
+   << "     interaction probability between cells, [default = 0.0]\n"
    << "\n"
    << "OpenCL options:\n"
    << "  -cl-p <n>, --cl-platform-id <n>\n"
@@ -141,6 +145,9 @@ Params::Initialize()
    Opts.Int.Add( "-min", "--minimum-size", 1, 1, numeric_limits<int>::max() );
 
    Opts.Float.Add( "-et", "--error-tolerance", -1.0, 0.0 );
+
+   Opts.Int.Add( "-nc", "--number-of-cells", 1, 1 );
+   Opts.Float.Add( "-ip", "--interaction-probability", 0.0, 0.0, 1.0 );
 
    Opts.Int.Add( "-cl-mls", "--cl-maximum-local-size", 0, 1 );
    Opts.Int.Add( "-cl-p", "--cl-platform-id", -1, 0 );
@@ -210,6 +217,12 @@ Params::Initialize()
    m_tournament_size = Opts.Int.Get( "-sp" );
                                               
    m_error_tolerance = Opts.Float.Get( "-et" );
+
+   m_number_of_cells = Opts.Int.Get( "-nc" );
+   if( m_population_size % m_number_of_cells != 0 )
+      throw Error( "Population size must be divided by number of cells" );
+
+   m_interaction_probability = Opts.Float.Get( "-ip" );
 
    m_output_file = Opts.String.Get( "-o" );
 

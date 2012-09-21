@@ -70,10 +70,6 @@
 #include <iostream>
 #include <vector>
 #include <cassert>
-#include <tr1/random>
-
-typedef std::tr1::ranlux64_base_01 RND_ENGINE; 
-typedef std::tr1::normal_distribution<double> RND_NORMAL_DIST; 
 
 /*
 Definitions:
@@ -93,16 +89,6 @@ Definitions:
 
 // -----------------------------------------------------------------------------
 class GP {
-public:
-   template<class T> T RndNormal()
-   { 
-      return static_cast<T>( m_normal_dist( m_engine ) );
-   }
-
-protected:
-   RND_ENGINE m_engine;
-   RND_NORMAL_DIST m_normal_dist;
-
 public:
    /**
     * @class Error
