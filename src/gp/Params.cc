@@ -5,7 +5,7 @@
 // 
 //   Genetic Programming in OpenCL (gpocl)
 //
-//   Copyright (C) 2010-2011 Douglas A. Augusto
+//   Copyright (C) 2010-2012 Douglas A. Augusto
 // 
 // This file is part of gpocl
 // 
@@ -136,7 +136,7 @@ Params::Initialize()
    Opts.Int.Add( "-ps", "--population-size", 1024, 5, numeric_limits<int>::max() );
    Opts.Float.Add( "-cp", "--crossover-probability", 0.95, 0.0, 1.0 );
    Opts.Float.Add( "-mp", "--mutation-probability", 0.10, 0.0, 1.0 );
-   Opts.Int.Add( "-sp", "--seletion-pressure", 3, 1, numeric_limits<int>::max() );
+   Opts.Int.Add( "-sp", "--selection-pressure", 3, 1, numeric_limits<int>::max() );
 
    // FIXME: Opts.Int.Add( "-es", "--elitism-size", 1, 0, numeric_limits<int>::max() );
    Opts.Int.Add( "-es", "--elitism-size", 1, 0, 1 );

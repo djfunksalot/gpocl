@@ -5,7 +5,7 @@
 // 
 //   Genetic Programming in OpenCL (gpocl)
 //
-//   Copyright (C) 2010-2011 Douglas A. Augusto
+//   Copyright (C) 2010-2012 Douglas A. Augusto
 // 
 // This file is part of gpocl
 // 
